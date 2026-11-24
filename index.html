@@ -30,7 +30,8 @@ svg{display:block}
 .cover::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.38) 0%,rgba(0,0,0,0) 28%,rgba(0,0,0,0) 50%,rgba(0,0,0,.6) 100%);pointer-events:none}
 .cover-brand{position:absolute;top:28px;inset-inline:0;z-index:2;display:flex;justify-content:center}
 .cover-brand .name{font-size:13px;letter-spacing:.3em;text-transform:uppercase;font-weight:400}
-.cover-brand .logo{height:46px;max-width:200px;object-fit:contain;filter:drop-shadow(0 1px 6px rgba(0,0,0,.35))}
+.cover-brand .logo{height:var(--logo-h,120px);max-width:min(72vw,560px);object-fit:contain;filter:drop-shadow(0 1px 8px rgba(0,0,0,.35))}
+@media(max-width:700px){.cover-brand .logo{height:calc(var(--logo-h,120px) * .7)}}
 .cover-text{position:absolute;inset-inline:0;bottom:13vh;z-index:2;text-align:center;padding:0 24px;animation:fade 1s .3s both}
 .cover h1{font-family:var(--serif);font-weight:300;font-size:clamp(40px,6.4vw,84px);line-height:1.05}
 .cover .sub{margin-top:16px;font-size:14px;letter-spacing:.14em;opacity:.92;font-weight:400}
@@ -43,7 +44,7 @@ svg{display:block}
 /* ───── top bar ───── */
 .bar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.93);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--line)}
 .bar-in{height:var(--bar);display:flex;align-items:center;gap:10px;padding:0 clamp(12px,3vw,40px)}
-.bar-logo{height:30px;max-width:110px;object-fit:contain}
+.bar-logo{height:34px;max-width:130px;object-fit:contain}
 .bar-title{flex:1;min-width:0;padding-inline-start:4px}
 .bar-title b{display:block;font-family:var(--serif);font-weight:400;font-size:19px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bar-title span{display:block;font-size:12px;color:var(--muted)}
@@ -108,7 +109,7 @@ svg{display:block}
 
 .foot{border-top:1px solid var(--line);padding:56px 24px 64px;text-align:center}
 .foot .name{font-family:var(--serif);font-size:24px;font-weight:400}
-.foot .logo{height:52px;max-width:220px;object-fit:contain;margin:0 auto}
+.foot .logo{height:min(var(--logo-h,120px),110px);max-width:min(70vw,360px);object-fit:contain;margin:0 auto}
 .foot .tag{margin-top:6px;color:var(--muted);font-size:14px}
 .foot .links{margin-top:20px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
 .foot .links a{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;transition:background .2s}
@@ -172,7 +173,7 @@ textarea.field{min-height:100px;resize:vertical;line-height:1.5}
 .msg{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}
 .msg .brand{margin-bottom:44px}
 .msg .brand .name{font-size:13px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted)}
-.msg .brand .logo{height:50px;max-width:200px;object-fit:contain}
+.msg .brand .logo{height:min(var(--logo-h,120px),110px);max-width:min(70vw,360px);object-fit:contain}
 .msg h1{font-family:var(--serif);font-weight:300;font-size:clamp(30px,4.5vw,42px);margin-bottom:10px}
 .msg p{color:var(--muted);font-size:15px;line-height:1.6}
 html[lang=he] .cover-brand .name,html[lang=he] .msg .brand .name{letter-spacing:.04em;text-transform:none;font-size:15px}
@@ -265,7 +266,8 @@ function applySettings(s) {
   if (!s) return;
   S = s; store.set('gsettings', JSON.stringify(s));
   document.documentElement.style.setProperty('--accent', S.accent || '#1a1a1a');
-  if (S.logoId) $('#favicon').href = thumb(S.logoId, 64);
+  document.documentElement.style.setProperty('--logo-h', (LOGO_H[S.logoSize] || LOGO_H.l) + 'px');
+  if (logoSrc(64)) $('#favicon').href = logoSrc(64);
 }
 const thumb  = (id, w) => `https://lh3.googleusercontent.com/d/${id}=w${w}`;
 const thumb2 = (id, w) => `https://drive.google.com/thumbnail?id=${id}&sz=w${w}`;
@@ -292,8 +294,15 @@ function setLang(l) {
   document.documentElement.lang = RTL ? 'he' : 'en';
   document.documentElement.dir = RTL ? 'rtl' : 'ltr';
 }
+const LOGO_H = { s: 56, m: 84, l: 120, xl: 170 };
+const GRID_H = { s: 0.7, m: 1, l: 1.35, xl: 1.8 };
+const GRID_GAP = { none: 0, s: 4, m: 8, l: 16, xl: 28 };
+function logoSrc(w) {
+  if (S.logoUrl) return /^https?:/i.test(S.logoUrl) ? S.logoUrl : SITE + S.logoUrl.replace(/^\/+/, '');
+  return S.logoId ? thumb(S.logoId, w) : '';
+}
 function brandHtml() {
-  if (S.logoId) return `<img class="logo" src="${thumb(S.logoId, 480)}" alt="${esc(S.studioName)}">`;
+  if (logoSrc(600)) return `<img class="logo" src="${esc(logoSrc(800))}" alt="${esc(S.studioName)}">`;
   return S.studioName ? `<span class="name">${esc(S.studioName)}</span>` : '';
 }
 function wmUrl(t) {
@@ -328,6 +337,7 @@ function loadVisitor() {
 /* ───── boot ───── */
 async function init() {
   document.documentElement.style.setProperty('--accent', S.accent || '#1a1a1a');
+  document.documentElement.style.setProperty('--logo-h', (LOGO_H[S.logoSize] || LOGO_H.l) + 'px');
   st.visitor = loadVisitor();
   if (!CFG.API_URL || /PASTE/.test(CFG.API_URL)) return showMsg('Setup', 'config.js → API_URL');
   if (!SLUG) {
@@ -357,7 +367,7 @@ function showMsg(title, sub) {
 }
 
 function showLock(meta) {
-  $('#app').innerHTML = `<div class="lock">${meta.coverId ? '<img class="bg" alt="">' : ''}
+  $('#app').innerHTML = `<div class="lock">${meta.coverId ? `<img class="bg" alt="" style="object-position:${esc(meta.coverPos || '50% 50%')}">` : ''}
     <form class="box" id="lockf" autocomplete="off">
       <div class="ic">${ic('lock')}</div>
       <h1>${esc(meta.title)}</h1>
@@ -439,7 +449,7 @@ function renderBar() {
   const showTabs = st.view === 'all' && st.sections.filter(s => s.title).length > 0 && st.sections.length > 1;
   $('#bar').innerHTML = `
     <div class="bar-in">
-      ${S.logoId ? `<img class="bar-logo" src="${thumb(S.logoId, 300)}" alt="">` : ''}
+      ${logoSrc(300) ? `<img class="bar-logo" src="${esc(logoSrc(300))}" alt="">` : ''}
       <div class="bar-title"><b>${esc(m.title)}</b><span>${fmt(L.photos, { n: st.items.length })}</span></div>
       ${m.allowFavorites ? `<button class="ibtn ${st.view === 'favs' ? 'on' : ''}" id="b-fav">${ic('heart')}<span class="lbl">${esc(L.favorites)}</span><span class="badge" id="favcount">${st.favs.size || ''}</span></button>` : ''}
       ${m.allowDownload && st.folderUrl ? `<button class="ibtn" id="b-dl">${ic('download')}<span class="lbl">${esc(L.downloadAll)}</span></button>` : ''}
@@ -509,8 +519,10 @@ function layoutAll() { document.querySelectorAll('.grid').forEach(g => layoutGri
 
 function layoutGrid(grid, items) {
   const W = grid.clientWidth; if (!W) return;
-  const target = W < 520 ? 150 : W < 900 ? 210 : W < 1400 ? 270 : 320;
-  const gap = W < 520 ? 4 : 8;
+  const k = GRID_H[S.gridSize] || 1;
+  const target = (W < 520 ? 150 : W < 900 ? 210 : W < 1400 ? 270 : 320) * k;
+  const g0 = GRID_GAP[S.gridGap] != null ? GRID_GAP[S.gridGap] : 8;
+  const gap = W < 520 ? Math.round(g0 * 0.5) : g0;
   const frag = document.createDocumentFragment();
   let row = [], sum = 0;
   const flush = last => {
@@ -775,7 +787,7 @@ function footerHtml() {
   if (S.facebook) links.push([/facebook\.com/i.test(S.facebook) ? http(S.facebook) : 'https://facebook.com/' + S.facebook, 'facebook']);
   if (S.website) links.push([http(S.website), 'globe']);
   if (S.email) links.push(['mailto:' + S.email, 'mail']);
-  if (!S.studioName && !S.logoId && !links.length) return '';
+  if (!S.studioName && !logoSrc(64) && !links.length) return '';
   return `${brandHtml()}${S.tagline ? `<div class="tag">${esc(S.tagline)}</div>` : ''}
     ${links.length ? `<div class="links">${links.map(([u, i]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${ic(i)}</a>`).join('')}</div>` : ''}`;
 }

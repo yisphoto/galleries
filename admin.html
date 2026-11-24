@@ -151,6 +151,22 @@ select.inp{padding:0 10px}
 .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:var(--soft);color:var(--muted)}
 .tag.ok{background:#eaf5ee;color:var(--ok)}
 h5{font-size:14px;font-weight:600;margin:18px 0 6px}
+.focal{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:14px}
+.fp-main{position:relative;display:inline-block;line-height:0;border-radius:10px;overflow:hidden;cursor:crosshair;touch-action:none;background:#eee;max-width:100%}
+.fp-main img{max-width:100%;max-height:300px;display:block;user-select:none;-webkit-user-drag:none;pointer-events:none}
+.fp-dot{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.4);pointer-events:none}
+.fp-dot::after{content:'';position:absolute;top:50%;left:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:#fff}
+.fp-prev{display:flex;gap:12px;align-items:flex-end}
+.fp-prev small{display:block;text-align:center;color:var(--muted);font-size:12px;margin-top:4px}
+.pv{overflow:hidden;border-radius:8px;background:#ddd}
+.pv img{width:100%;height:100%;object-fit:cover;display:block}
+.pv-d{width:210px;aspect-ratio:16/10}
+.pv-m{width:82px;aspect-ratio:9/19}
+.gprev{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;margin-top:4px}
+.gprev .r{display:flex}
+.gprev .r div{background:linear-gradient(135deg,#d9d3ca,#c4bcb0);border-radius:1px}
+.logoprev{margin-top:8px;padding:14px;border-radius:10px;background:linear-gradient(135deg,#55595c,#2c2f31);display:none;text-align:center}
+.logoprev img{max-height:70px;max-width:100%;object-fit:contain}
 
 #toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,16px);background:#171717;color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:.3s;z-index:80;max-width:90vw;text-align:center;line-height:1.5}
 #toast.show{opacity:1;transform:translate(-50%,0)}
@@ -403,8 +419,7 @@ function openEditor(g) {
     </div>
     <div class="fsec"><h4>תמונת שער</h4>
       <div class="covers" id="e-covers"><span class="finfo">בחרו תיקייה כדי לבחור תמונת שער</span></div>
-      <div class="frow" style="margin-top:12px"><div class="fl"><label>מיקוד התמונה בשער</label><select class="inp" data-k="coverPos">
-        <option value="50% 20%">למעלה</option><option value="50% 50%">מרכז</option><option value="50% 80%">למטה</option></select></div></div>
+      <div id="e-focal"></div>
     </div>
     <div class="fsec"><h4>טקסטים</h4>
       <div class="frow one"><div class="fl"><label>הודעת פתיחה ללקוח (מופיעה מתחת לשער)</label><textarea class="inp" data-k="message" placeholder="תודה שבחרתם בי לתעד את היום המיוחד שלכם…">${esc(ED.message)}</textarea></div></div>
@@ -413,7 +428,6 @@ function openEditor(g) {
   </form></div>`, `<button class="btn ghost" data-close>ביטול</button><button class="btn pri" id="e-save">${isNew ? 'יצירת הגלריה' : 'שמירה'}</button>`, 'wide');
 
   $('[data-k=lang]', m).value = ED.lang;
-  $('[data-k=coverPos]', m).value = ED.coverPos;
   const titleI = $('[data-k=title]', m), slugI = $('[data-k=slug]', m);
   slugI.oninput = () => { ED._slugTouched = true; };
   titleI.oninput = () => { if (!ED._slugTouched) slugI.value = slugify(titleI.value); };
@@ -464,7 +478,7 @@ function openEditor(g) {
   }).catch(fail);
 
   $('#e-save').onclick = async () => {
-    const data = { id: ED.id, folderId: ED.folderId, coverId: ED.coverId };
+    const data = { id: ED.id, folderId: ED.folderId, coverId: ED.coverId, coverPos: ED.coverPos };
     $$('[data-k]', m).forEach(i => { data[i.dataset.k] = i.type === 'checkbox' ? i.checked : i.value; });
     if (!data.folderId) return toast('בחרו תיקייה לגלריה', true);
     if (!data.title.trim()) { titleI.focus(); return toast('תנו שם לגלריה', true); }
@@ -495,11 +509,48 @@ async function loadCovers(fresh) {
     info.innerHTML = `${r.count} קבצים${r.sections.length ? ` ב־${r.sections.length} תת־תיקיות (${r.sections.map(esc).join(', ')})` : ''} · <a href="${esc(r.url)}" target="_blank" rel="noopener">פתיחה בדרייב</a> · <a href="#" id="e-rf2">רענון</a>`;
     $('#e-rf2').onclick = e => { e.preventDefault(); loadCovers(true); };
     const imgs = r.items.filter(i => !i.v);
-    if (!imgs.length) { box.innerHTML = '<span class="finfo">אין עדיין תמונות בתיקייה</span>'; return; }
-    if (!ED.coverId || !r.items.some(i => i.id === ED.coverId)) ED.coverId = imgs[0].id;
+    if (!imgs.length) { box.innerHTML = '<span class="finfo">אין עדיין תמונות בתיקייה</span>'; ED.coverId = ''; renderFocal(); return; }
+    if (!ED.coverId || !r.items.some(i => i.id === ED.coverId)) { ED.coverId = imgs[0].id; ED.coverPos = '50% 50%'; }
     box.innerHTML = imgs.map(i => `<button type="button" data-id="${esc(i.id)}" class="${i.id === ED.coverId ? 'on' : ''}" title="${esc(i.n)}">${imgTag(i.id, 240)}</button>`).join('');
-    $$('button', box).forEach(b => b.onclick = () => { ED.coverId = b.dataset.id; $$('button', box).forEach(x => x.classList.toggle('on', x === b)); });
+    $$('button', box).forEach(b => b.onclick = () => {
+      if (ED.coverId !== b.dataset.id) { ED.coverId = b.dataset.id; ED.coverPos = '50% 50%'; }
+      $$('button', box).forEach(x => x.classList.toggle('on', x === b));
+      renderFocal();
+    });
+    renderFocal();
   } catch (e) { box.innerHTML = `<span class="finfo">${esc(e.message)}</span>`; }
+}
+
+/* בחירת נקודת המרכז של תמונת השער */
+function renderFocal() {
+  const box = $('#e-focal'); if (!box) return;
+  if (!ED.coverId) { box.innerHTML = ''; return; }
+  const src = w => thumb(ED.coverId, w), fb = w => `onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src='${thumb2(ED.coverId, w)}'}"`;
+  box.innerHTML = `<div class="focal">
+    <div><div class="fl"><span class="lab">נקודת המרכז: לחצו (או גררו) על החלק החשוב בתמונה</span></div>
+      <div class="fp-main" id="fp"><img src="${src(900)}" ${fb(900)} alt=""><span class="fp-dot" id="fp-dot"></span></div></div>
+    <div class="fp-prev">
+      <div><div class="pv pv-d"><img class="fp-pv" src="${src(900)}" ${fb(900)} alt=""></div><small>מחשב</small></div>
+      <div><div class="pv pv-m"><img class="fp-pv" src="${src(600)}" ${fb(600)} alt=""></div><small>טלפון</small></div>
+    </div></div>`;
+  const apply = () => {
+    const [x, y] = ED.coverPos.split(' ').map(parseFloat);
+    const d = $('#fp-dot'); d.style.left = x + '%'; d.style.top = y + '%';
+    $$('.fp-pv', box).forEach(i => i.style.objectPosition = ED.coverPos);
+  };
+  const fp = $('#fp');
+  const setFrom = e => {
+    const r = fp.getBoundingClientRect();
+    const x = Math.round(Math.min(100, Math.max(0, (e.clientX - r.left) / r.width * 100)));
+    const y = Math.round(Math.min(100, Math.max(0, (e.clientY - r.top) / r.height * 100)));
+    ED.coverPos = x + '% ' + y + '%'; apply();
+  };
+  let down = false;
+  fp.addEventListener('pointerdown', e => { down = true; try { fp.setPointerCapture(e.pointerId); } catch (_) {} setFrom(e); });
+  fp.addEventListener('pointermove', e => { if (down) setFrom(e); });
+  fp.addEventListener('pointerup', () => { down = false; });
+  fp.addEventListener('pointercancel', () => { down = false; });
+  apply();
 }
 
 function showShare(g) {
@@ -548,8 +599,16 @@ function openSettings() {
   const m = modal('הגדרות', `<div class="mbody">
     <div class="fsec"><h4>המיתוג שלך</h4>
       <div class="frow">${f('studioName', 'שם הסטודיו', 'לדוגמה: דני כהן צילום')}${f('tagline', 'משפט קצר מתחת לשם', 'צילום אירועים ומשפחה')}</div>
-      <div class="frow"><div class="fl"><label>לוגו (קישור לקובץ בדרייב)</label><input class="inp ltr" data-s="logo" value="${s.logoId ? 'https://drive.google.com/file/d/' + esc(s.logoId) + '/view' : ''}" placeholder="https://drive.google.com/file/d/..."><div class="hint">עדיף PNG עם רקע שקוף. ריק = יוצג שם הסטודיו</div></div>
-        <div class="fl"><label>צבע כפתורים</label><input class="inp" type="color" data-s="accent" value="${esc(s.accent || '#1a1a1a')}" style="padding:4px"></div></div>
+      <div class="frow"><div class="fl"><label>לוגו</label><input class="inp ltr" data-s="logo" id="st-logo" value="${esc(s.logoUrl || (s.logoId ? 'https://drive.google.com/file/d/' + s.logoId + '/view' : ''))}" placeholder="logo.png">
+          <div class="hint">העלו את קובץ הלוגו ל־GitHub (כמו שהעליתם את שאר הקבצים) וכתבו כאן את שם הקובץ, למשל <b class="ltr">logo.png</b>. אפשר גם קישור לקובץ בדרייב. עדיף PNG עם רקע שקוף. ריק = יוצג שם הסטודיו.</div>
+          <div class="logoprev" id="st-lp"><img id="st-lpi" alt=""></div></div>
+        <div class="fl"><label>גודל הלוגו בשער</label><select class="inp" data-s="logoSize"><option value="s">קטן</option><option value="m">בינוני</option><option value="l">גדול</option><option value="xl">גדול מאוד</option></select>
+          <label style="margin-top:12px">צבע כפתורים</label><input class="inp" type="color" data-s="accent" value="${esc(s.accent || '#1a1a1a')}" style="padding:4px"></div></div>
+    </div>
+    <div class="fsec"><h4>תצוגת התמונות בגלריה</h4>
+      <div class="frow"><div class="fl"><label>גודל התמונות</label><select class="inp" data-s="gridSize"><option value="s">קטנות (יותר תמונות בשורה)</option><option value="m">בינוניות</option><option value="l">גדולות</option><option value="xl">גדולות מאוד</option></select></div>
+        <div class="fl"><label>רווח בין התמונות</label><select class="inp" data-s="gridGap"><option value="none">בלי רווח</option><option value="s">קטן</option><option value="m">בינוני</option><option value="l">גדול</option><option value="xl">גדול מאוד</option></select></div></div>
+      <div class="fl"><span class="lab">תצוגה מקדימה (מוקטנת)</span><div class="gprev" id="st-gp"></div></div>
     </div>
     <div class="fsec"><h4>פרטי קשר (מופיעים בתחתית כל גלריה)</h4>
       <div class="frow">${f('phone', 'טלפון', '050-0000000', 'ltr')}${f('whatsapp', 'וואטסאפ', '050-0000000', 'ltr')}</div>
@@ -564,6 +623,18 @@ function openSettings() {
         <div class="fl"><label>סיסמת ניהול חדשה</label><input class="inp ltr" type="password" data-s="newPassword" placeholder="השאירו ריק כדי לא לשנות" autocomplete="new-password"></div></div>
       <p class="finfo">כל הנתונים (גלריות, בחירות, הערות) נשמרים ב<a href="${esc(DATA.dbUrl)}" target="_blank" rel="noopener">גיליון הזה</a> בדרייב שלך.</p>
     </div></div>`, `<button class="btn ghost" data-close>ביטול</button><button class="btn pri" id="st-save">שמירה</button>`, 'wide');
+  $('[data-s=logoSize]', m).value = s.logoSize || 'l';
+  $('[data-s=gridSize]', m).value = s.gridSize || 'm';
+  $('[data-s=gridGap]', m).value = s.gridGap || 'm';
+  const gp = () => { $('#st-gp').innerHTML = gridPreview($('[data-s=gridSize]', m).value, $('[data-s=gridGap]', m).value, $('#st-gp').clientWidth - 20); };
+  $('[data-s=gridSize]', m).onchange = gp; $('[data-s=gridGap]', m).onchange = gp; gp();
+  const lp = () => {
+    const v = $('#st-logo').value.trim(), id = (v.match(/[-\w]{25,}/) || [])[0];
+    const src = /drive\.google|docs\.google/.test(v) && id ? thumb(id, 400) : v ? (/^https?:/.test(v) ? v : SITE + v.replace(/^\/+/, '')) : '';
+    $('#st-lp').style.display = src ? 'block' : 'none';
+    if (src) $('#st-lpi').src = src;
+  };
+  $('#st-logo').oninput = lp; lp();
   $('#st-save', m).onclick = async () => {
     const data = {};
     $$('[data-s]', m).forEach(i => data[i.dataset.s] = i.value.trim());
@@ -575,6 +646,21 @@ function openSettings() {
       toast('ההגדרות נשמרו'); loadAll(true);
     } catch (e) { fail(e); b.disabled = false; }
   };
+}
+
+function gridPreview(size, gap, W) {
+  W = Math.max(200, W || 600);
+  const target = 70 * ({ s: .7, m: 1, l: 1.35, xl: 1.8 }[size] || 1);
+  const g = ({ none: 0, s: 2, m: 4, l: 8, xl: 14 }[gap]);
+  const ars = [1.5, .67, 1.5, 1, .67, 1.5, 1.5, .67, 1, 1.5, .67, 1.5, 1.5, 1, .67, 1.5, .67, 1.5];
+  let html = '', row = [], sum = 0, rows = 0;
+  const flush = () => {
+    const h = (W - g * (row.length - 1)) / sum;
+    html += `<div class="r" style="gap:${g}px;margin-bottom:${g}px">${row.map(a => `<div style="width:${(a * h).toFixed(1)}px;height:${h.toFixed(1)}px"></div>`).join('')}</div>`;
+    row = []; sum = 0; rows++;
+  };
+  for (const a of ars) { row.push(a); sum += a; if (sum * target + g * (row.length - 1) >= W) { flush(); if (rows >= 3) break; } }
+  return html;
 }
 
 /* ───── boot ───── */
