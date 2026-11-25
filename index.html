@@ -85,7 +85,15 @@ svg{display:block}
 .tile.is-fav .act-fav{background:#fff;color:var(--heart)}
 .tile.is-fav .act-fav svg path{fill:currentColor}
 .tile:not(.is-fav) .act-fav~.act{}
-@media(hover:none){.tile .acts{opacity:1;transform:none}}
+/* בטלפון: הכפתורים מוסתרים, ונגיעה בתמונה חושפת אותם (נגיעה שנייה פותחת את התמונה) */
+@media(hover:none){
+  .tile .acts{opacity:0;transform:translateY(4px);pointer-events:none;inset-inline-end:6px;bottom:6px;gap:5px}
+  .tile.show-acts .acts{opacity:1;transform:none;pointer-events:auto}
+  .tile.is-fav:not(.show-acts) .acts{opacity:1;transform:none;pointer-events:auto}
+  .tile.is-fav:not(.show-acts) .act:not(.act-fav){display:none}
+  .act{width:30px;height:30px}
+  .act svg{width:15px;height:15px}
+}
 .tile .play{position:absolute;inset:0;display:grid;place-items:center;color:#fff;pointer-events:none;z-index:1}
 .tile .play svg{width:54px;height:54px;filter:drop-shadow(0 2px 10px rgba(0,0,0,.4))}
 .nodl img{-webkit-user-drag:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
@@ -220,6 +228,7 @@ const DICT = {
     empty:'עוד לא בחרת תמונות', emptySub:'לחצו על הלב שעל תמונה כדי להוסיף אותה למועדפים.',
     photos:'{n} תמונות', error:'משהו השתבש. נסו לרענן את הדף.', dlSection:'הורדת התיקייה',
     dlTitle:'הורדת התמונות', dlHelp:'התמונות יורדו באיכות מקורית, בקובץ ZIP אחד.', dlEverything:'כל התמונות',
+    dlPhoneOnly:'הורדה של כל הגלריה אפשרית רק מהמחשב. בטלפון אפשר לשמור תמונה בודדת (נגיעה בתמונה ואז בכפתור ההורדה), או לסמן תמונות בלב ולשמור את המועדפים.',
     dlHelpParts:'התמונות יורדו באיכות מקורית. בגלריה גדולה ההורדה תתחלק לכמה קובצי ZIP.',
     preparing:'מכין את ההורדה…', progress:'{n} מתוך {m} · {mb}', stop:'עצירה', dlDone:'ההורדה הסתיימה', dlFailed:'{n} קבצים לא ירדו. נסו להוריד אותם בנפרד.',
     dlPart:'חלק {n} ירד', dlErr:'ההורדה נכשלה. נסו שוב.', saveImg:'שמירת התמונה', saveImgs:'שמירת {n} תמונות', readyTitle:'התמונות מוכנות', readyOne:'התמונה מוכנה',
@@ -240,6 +249,7 @@ const DICT = {
     empty:'No favorites yet', emptySub:'Tap the heart on a photo to add it to your favorites.',
     photos:'{n} photos', error:'Something went wrong. Please refresh the page.', dlSection:'Download folder',
     dlTitle:'Download photos', dlHelp:'Photos download in full resolution as one ZIP file.', dlEverything:'All photos',
+    dlPhoneOnly:'Downloading the whole gallery is available on a computer. On your phone you can save single photos (tap a photo, then the download button) or heart photos and save your favorites.',
     dlHelpParts:'Photos download in full resolution. Large galleries are split into several ZIP files.',
     preparing:'Preparing download…', progress:'{n} of {m} · {mb}', stop:'Stop', dlDone:'Download complete', dlFailed:'{n} files failed. Try downloading them individually.',
     dlPart:'Part {n} downloaded', dlErr:'Download failed. Please try again.', saveImg:'Save photo', saveImgs:'Save {n} photos', readyTitle:'Your photos are ready', readyOne:'Your photo is ready',
@@ -475,7 +485,7 @@ function renderBar() {
       ${logoSrc(300) ? `<img class="bar-logo" src="${esc(logoSrc(300))}" alt="">` : ''}
       <div class="bar-title"><b>${esc(m.title)}</b><span>${fmt(L.photos, { n: st.items.length })}</span></div>
       ${m.allowFavorites ? `<button class="ibtn ${st.view === 'favs' ? 'on' : ''}" id="b-fav">${ic('heart')}<span class="lbl">${esc(L.favorites)}</span><span class="badge" id="favcount">${st.favs.size || ''}</span></button>` : ''}
-      ${m.allowDownload && (HAS_KEY ? !MOBILE && st.items.length : st.folderUrl) ? `<button class="ibtn" id="b-dl">${ic('download')}<span class="lbl">${esc(L.downloadAll)}</span></button>` : ''}
+      ${m.allowDownload && (HAS_KEY ? st.items.length : st.folderUrl) ? `<button class="ibtn" id="b-dl">${ic('download')}<span class="lbl">${esc(L.downloadAll)}</span></button>` : ''}
       <button class="ibtn" id="b-share">${ic('share')}<span class="lbl">${esc(L.share)}</span></button>
     </div>
     ${showTabs ? `<nav class="tabs"><button class="tab on" data-sec="top">${esc(L.all)}</button>${st.sections.map((s, i) => s.title ? `<button class="tab" data-sec="${i}">${esc(s.title)}</button>` : '').join('')}</nav>` : ''}`;
@@ -585,11 +595,21 @@ function tileFor(it) {
   if (acts) el.insertAdjacentHTML('beforeend', `<div class="acts">${acts}</div>`);
   el.addEventListener('click', e => {
     const a = e.target.closest('[data-a]');
-    if (a) { e.stopPropagation(); a.dataset.a === 'fav' ? toggleFav(it, a) : download(it); return; }
+    if (a) { e.stopPropagation(); a.dataset.a === 'fav' ? toggleFav(it, a) : download(it); revealActs(el); return; }
+    if (acts && TOUCH() && !el.classList.contains('show-acts')) { revealActs(el); return; }
     openLb(it);
   });
   it._el = el; it._img = img;
   return el;
+}
+
+const TOUCH = () => matchMedia('(hover:none)').matches;
+let actsEl = null, actsT;
+function revealActs(el) {
+  if (!TOUCH()) return;
+  if (actsEl && actsEl !== el) actsEl.classList.remove('show-acts');
+  actsEl = el; el.classList.add('show-acts');
+  clearTimeout(actsT); actsT = setTimeout(() => { el.classList.remove('show-acts'); if (actsEl === el) actsEl = null; }, 4000);
 }
 
 function sizeTile(it, w, h) {
@@ -888,6 +908,12 @@ async function downloadZip(items, label, withFolders) {
 }
 
 function downloadAll() {
+  if (MOBILE && HAS_KEY) {
+    modal(`<h3>${esc(L.dlTitle)}</h3><p>${esc(L.dlPhoneOnly)}</p>
+      <div class="row-btns">${st.meta.allowFavorites ? `<button class="btn light" id="gofav">${ic('heart')}${esc(L.favorites)}</button>` : ''}<button class="btn" data-close>${esc(L.close)}</button></div>`,
+      () => { const g = $('#gofav'); if (g) g.onclick = () => { closeModal(); setView('favs'); }; });
+    return;
+  }
   // בלי מפתח API – ההתנהגות הישנה (פתיחת התיקייה בדרייב)
   if (!HAS_KEY) {
     const secs = st.sections.filter(s => s.title && s.folderUrl);
@@ -917,7 +943,7 @@ function downloadAll() {
 
 /* ───── share ───── */
 async function share() {
-  const url = SITE + '?g=' + encodeURIComponent(SLUG);
+  const url = (st.meta && st.meta.shareUrl) || SITE + '?g=' + encodeURIComponent(SLUG);
   if (navigator.share && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
     try { await navigator.share({ title: st.meta.title, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
   }

@@ -215,7 +215,7 @@ const ss = { get(k){ try { return localStorage.getItem(k); } catch(e){ return nu
 const thumb = (id, w) => `https://lh3.googleusercontent.com/d/${id}=w${w}`;
 const thumb2 = (id, w) => `https://drive.google.com/thumbnail?id=${id}&sz=w${w}`;
 const imgTag = (id, w, cls) => id ? `<img ${cls ? `class="${cls}"` : ''} src="${thumb(id, w)}" loading="lazy" alt="" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src='${thumb2(id, w)}'}">` : '';
-const galUrl = slug => SITE + '?g=' + encodeURIComponent(slug);
+const galUrl = slug => { const g = DATA && DATA.galleries.find(x => x.slug === slug); return g && g.shareUrl ? g.shareUrl : SITE + '?g=' + encodeURIComponent(slug); };
 const today = () => new Date().toISOString().slice(0, 10);
 const fmtDate = d => { if (!d) return ''; try { const x = /^\d{4}-\d{2}-\d{2}$/.test(d) ? new Date(d + 'T12:00:00') : new Date(d); return x.toLocaleDateString('he-IL', { day:'numeric', month:'short', year:'numeric' }); } catch(e) { return d; } };
 const fmtTime = d => { try { return new Date(d).toLocaleString('he-IL', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }); } catch(e) { return d; } };
@@ -491,7 +491,8 @@ function openEditor(g) {
       closeModal();
       await loadAll(true);
       const g = DATA.galleries.find(x => x.id === r.id);
-      if (isNew && g) showShare(g); else toast('נשמר');
+      if (r.warn) toast(r.warn, true);
+      if (isNew && g) showShare(g); else if (!r.warn) toast('נשמר');
     } catch (e) { fail(e); b.disabled = false; b.textContent = isNew ? 'יצירת הגלריה' : 'שמירה'; }
   };
 }
@@ -640,6 +641,12 @@ function openSettings() {
       <div class="frow">${f('instagram', 'אינסטגרם', '@username', 'ltr')}${f('facebook', 'פייסבוק', 'page-name', 'ltr')}</div>
       <div class="frow">${f('website', 'אתר', 'www.example.co.il', 'ltr')}${f('email', 'אימייל', 'me@example.com', 'ltr')}</div>
     </div>
+    <div class="fsec"><h4>תמונה בקישור בוואטסאפ (חיבור ל-GitHub)</h4>
+      <p class="finfo" style="margin-top:0">כשהחיבור פעיל, לכל גלריה נוצר דף קטן ב-GitHub, וכשתשלחו קישור בוואטסאפ תופיע תמונת השער עם שם הגלריה. ${s.ghOn ? '<b style="color:var(--ok)">✓ מחובר</b>' : '<b>לא מחובר</b>'}</p>
+      <div class="frow"><div class="fl"><label>מפתח גישה של GitHub</label><input class="inp ltr" type="password" data-s="ghToken" placeholder="${s.ghOn ? 'השאירו ריק כדי לא לשנות' : 'github_pat_...'}" autocomplete="off"></div>
+        <div class="fl"><label>ה-repo של האתר</label><input class="inp ltr" data-s="ghRepo" value="${esc(s.ghRepo || '')}" placeholder="username/galleries"></div></div>
+      ${s.ghOn ? `<button type="button" class="btn ghost sm" id="st-pub">${ic('refresh')}יצירת תמונה בקישור לכל הגלריות הקיימות</button>` : ''}
+    </div>
     <div class="fsec"><h4>התראות</h4>
       <div class="frow one">${f('notifyEmail', 'לאיזה מייל לשלוח הודעה כשלקוח שולח בחירה', DATA.accountEmail, 'ltr', 'ריק = ' + esc(DATA.accountEmail))}</div>
     </div>
@@ -660,6 +667,16 @@ function openSettings() {
     if (src) $('#st-lpi').src = src;
   };
   $('#st-logo').oninput = lp; lp();
+  const pub = $('#st-pub');
+  if (pub) pub.onclick = async () => {
+    pub.disabled = true; pub.textContent = 'יוצר… (יכול לקחת כמה דקות)';
+    try {
+      const r = await call('adminPublishAll');
+      toast(`נוצרו ${r.done} דפים${r.failed ? `, ${r.failed} נכשלו` : ''}${r.left ? `. נשארו ${r.left}, לחצו שוב` : ''}`, !!r.failed);
+      loadAll(true);
+    } catch (e) { fail(e); }
+    pub.disabled = false; pub.textContent = 'יצירת תמונה בקישור לכל הגלריות הקיימות';
+  };
   $('#st-save', m).onclick = async () => {
     const data = {};
     $$('[data-s]', m).forEach(i => data[i.dataset.s] = i.value.trim());
