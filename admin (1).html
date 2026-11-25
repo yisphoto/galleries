@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>ניהול גלריות</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500&family=Heebo:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f3f0;--card:#fff;--ink:#171717;--muted:#7b7b7b;--line:#e7e5e1;--soft:#f7f6f4;--pri:#171717;--ok:#2e7d4f;--warn:#b7791f;--bad:#c0392b;--heart:#d9445a;
+  --serif:'Frank Ruhl Libre',Georgia,serif;--sans:'Heebo',system-ui,-apple-system,'Segoe UI',Arial,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+svg{display:block}
+.spinner{width:24px;height:24px;border:2px solid var(--line);border-top-color:var(--ink);border-radius:50%;animation:spin .8s linear infinite;margin:80px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:40px;padding:0 16px;border-radius:10px;font-size:14px;font-weight:500;white-space:nowrap;transition:background .15s,opacity .15s,border-color .15s}
+.btn svg{width:17px;height:17px}
+.btn.pri{background:var(--pri);color:#fff}
+.btn.pri:hover{opacity:.88}
+.btn.ghost{border:1px solid var(--line);background:var(--card)}
+.btn.ghost:hover{border-color:#cfccc6}
+.btn.danger{background:var(--bad);color:#fff}
+.btn.sm{height:34px;padding:0 12px;font-size:13px}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.5;cursor:default}
+.inp{width:100%;height:42px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:#fff;outline:none;transition:border-color .15s}
+.inp:focus{border-color:#a9a59e}
+textarea.inp{height:auto;min-height:84px;padding:10px 12px;resize:vertical;line-height:1.5}
+select.inp{padding:0 10px}
+.ltr{direction:ltr;text-align:left}
+
+/* login */
+.login{min-height:100vh;display:grid;place-items:center;padding:20px}
+.lcard{width:min(360px,100%);background:var(--card);border-radius:20px;padding:34px 28px;box-shadow:0 10px 40px rgba(0,0,0,.06);text-align:center;animation:fade .4s}
+.lcard .lt{font-family:var(--serif);font-size:28px;margin-bottom:6px}
+.lcard p{color:var(--muted);font-size:14px;margin-bottom:22px}
+.lcard .inp{text-align:center;margin-bottom:10px}
+.err{color:var(--bad);font-size:13px;margin-top:12px;line-height:1.6;min-height:18px}
+
+/* header */
+.top{position:sticky;top:0;z-index:10;background:rgba(244,243,240,.9);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.top-in{max-width:1280px;margin:0 auto;height:66px;display:flex;align-items:center;gap:10px;padding:0 20px}
+.brand{flex:1;font-family:var(--serif);font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand small{font-family:var(--sans);font-size:13px;color:var(--muted);margin-inline-start:8px}
+@media(max-width:760px){.top .btn .lbl{display:none}.top .btn{padding:0 11px}}
+.wrap{max-width:1280px;margin:0 auto;padding:24px 20px 80px}
+.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:22px}
+.toolbar .inp{max-width:320px}
+.summary{flex:1;color:var(--muted);font-size:14px}
+.summary b{color:var(--ink);font-weight:500}
+
+/* gallery cards */
+.ggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px}
+.gcard{background:var(--card);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);transition:box-shadow .2s,transform .2s;animation:fade .35s both;display:flex;flex-direction:column}
+.gcard:hover{box-shadow:0 10px 30px rgba(0,0,0,.08)}
+.gcover{position:relative;aspect-ratio:3/2;background:#e9e7e3;overflow:hidden;cursor:pointer}
+.gcover img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
+.gcard:hover .gcover img{transform:scale(1.03)}
+.pill{position:absolute;top:10px;inset-inline-start:10px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:500;background:rgba(255,255,255,.92)}
+.pill.ok{color:var(--ok)}.pill.expired{color:var(--warn)}.pill.unavailable{color:var(--muted)}
+.lockic{position:absolute;top:10px;inset-inline-end:10px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center}
+.lockic svg{width:14px;height:14px}
+.gbody{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.gt{font-weight:500;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gs{color:var(--muted);font-size:13px;margin-top:-4px;min-height:18px}
+.stats{display:flex;gap:14px;color:var(--muted);font-size:13px}
+.stats span{display:inline-flex;align-items:center;gap:4px}
+.stats svg{width:14px;height:14px}
+.selb{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;padding:4px 10px;border-radius:999px;background:#eaf5ee;color:var(--ok);font-size:12px;font-weight:500;cursor:pointer}
+.selb svg{width:13px;height:13px}
+.gacts{display:flex;gap:6px;margin-top:auto;padding-top:6px}
+.gacts .btn{flex:1;padding:0 8px}
+.gacts .btn.more{flex:none;width:34px;padding:0}
+.empty{text-align:center;padding:70px 20px;background:var(--card);border-radius:20px}
+.empty h2{font-family:var(--serif);font-weight:400;font-size:28px;margin-bottom:10px}
+.empty ol{text-align:right;display:inline-block;color:#555;line-height:2;margin:10px 0 24px;padding-inline-start:20px}
+
+/* modal */
+#modal{position:fixed;inset:0;z-index:50;background:rgba(20,20,20,.45);display:none;align-items:flex-start;justify-content:center;padding:4vh 14px;overflow:auto;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+#modal.open{display:flex}
+.mcard{background:var(--card);border-radius:20px;width:100%;max-width:460px;box-shadow:0 30px 80px rgba(0,0,0,.25);animation:fade .25s;margin-bottom:4vh}
+.mcard.wide{max-width:780px}
+.mcard.xwide{max-width:1000px}
+.mhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:20px 24px 0}
+.mhead h3{font-family:var(--serif);font-weight:400;font-size:24px}
+.mclose{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
+.mclose:hover{background:var(--soft)}
+.mclose svg{width:18px;height:18px}
+.mbody{padding:16px 24px 8px}
+.mbody p.note{color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:12px}
+.mfoot{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding:14px 24px 22px}
+.menu{display:flex;flex-direction:column;padding:8px 10px 14px}
+.menu button,.menu a{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;text-align:right;font-size:15px}
+.menu button:hover,.menu a:hover{background:var(--soft)}
+.menu svg{width:18px;height:18px;color:var(--muted)}
+.menu .red{color:var(--bad)}.menu .red svg{color:var(--bad)}
+
+/* form */
+.fsec{border-top:1px solid var(--line);padding:18px 0 6px}
+.fsec:first-child{border-top:0;padding-top:4px}
+.fsec h4{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:12px;letter-spacing:.02em}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.frow.one{grid-template-columns:1fr}
+@media(max-width:600px){.frow{grid-template-columns:1fr}}
+.fl label,.fl .lab{display:block;font-size:13px;color:#555;margin-bottom:6px}
+.fl .hint{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.5}
+.inline{display:flex;gap:8px;align-items:center}
+.inline .inp{flex:1}
+.urlbox{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden;direction:ltr;background:#fff}
+.urlbox span{padding:0 10px;color:var(--muted);font-size:13px;white-space:nowrap;background:var(--soft);height:42px;display:flex;align-items:center;max-width:55%;overflow:hidden;text-overflow:ellipsis}
+.urlbox input{border:0;height:42px;flex:1;padding:0 10px;outline:none;min-width:0}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;cursor:pointer}
+.sw .t{font-size:14px}
+.sw .t small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.sw input{display:none}
+.sw i{flex:none;width:42px;height:24px;border-radius:12px;background:#d6d3ce;position:relative;transition:background .2s}
+.sw i::after{content:'';position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.sw input:checked+i{background:var(--ok)}
+.sw input:checked+i::after{transform:translateX(-18px)}
+.covers{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px;max-height:260px;overflow:auto;padding:2px}
+.covers button{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#eee;outline:2px solid transparent;outline-offset:1px}
+.covers button img{width:100%;height:100%;object-fit:cover}
+.covers button.on{outline-color:var(--ink)}
+.covers button.on::after{content:'✓';position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:50%;background:var(--ink);color:#fff;font-size:12px;display:grid;place-items:center}
+.finfo{font-size:13px;color:var(--muted);margin:8px 0}
+.finfo a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.boxnote{background:#fbf6ea;border:1px solid #f0e3c2;color:#6b5418;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.6;margin:8px 0}
+
+/* selections */
+.vis{border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.vhead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.vname{font-weight:500;font-size:16px}
+.vmeta{color:var(--muted);font-size:13px;margin-top:2px}
+.vnote{background:var(--soft);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:10px;white-space:pre-wrap}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.thumbs figure{min-width:0}
+.thumbs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#eee;display:block}
+.thumbs figcaption{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:left}
+.cm{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.cm img{width:64px;height:64px;object-fit:cover;border-radius:8px;flex:none;background:#eee}
+.cm .ct{font-size:14px;line-height:1.55;white-space:pre-wrap}
+.cm .cmeta{font-size:12px;color:var(--muted);margin-top:4px}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:var(--soft);color:var(--muted)}
+.tag.ok{background:#eaf5ee;color:var(--ok)}
+h5{font-size:14px;font-weight:600;margin:18px 0 6px}
+.focal{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:14px}
+.fp-main{position:relative;display:inline-block;line-height:0;border-radius:10px;overflow:hidden;cursor:crosshair;touch-action:none;background:#eee;max-width:100%}
+.fp-main img{max-width:100%;max-height:300px;display:block;user-select:none;-webkit-user-drag:none;pointer-events:none}
+.fp-dot{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.4);pointer-events:none}
+.fp-dot::after{content:'';position:absolute;top:50%;left:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:#fff}
+.fp-prev{display:flex;gap:12px;align-items:flex-end}
+.fp-prev small{display:block;text-align:center;color:var(--muted);font-size:12px;margin-top:4px}
+.pv{overflow:hidden;border-radius:8px;background:#ddd}
+.pv img{width:100%;height:100%;object-fit:cover;display:block}
+.pv-d{width:210px;aspect-ratio:16/10}
+.pv-m{width:82px;aspect-ratio:9/19}
+.gprev{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;margin-top:4px}
+.gprev .r{display:flex}
+.gprev .r div{background:linear-gradient(135deg,#d9d3ca,#c4bcb0);border-radius:1px}
+.logoprev{margin-top:8px;padding:14px;border-radius:10px;background:linear-gradient(135deg,#55595c,#2c2f31);display:none;text-align:center}
+.logoprev img{max-height:70px;max-width:100%;object-fit:contain}
+
+#toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,16px);background:#171717;color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:.3s;z-index:80;max-width:90vw;text-align:center;line-height:1.5}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.bad{background:var(--bad)}
+</style>
+</head>
+<body>
+<div id="app"><div class="spinner"></div></div>
+<div id="modal"></div>
+<div id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+const CFG = window.GALLERY_CONFIG || {};
+const SITE = location.origin + location.pathname.replace(/[^/]*$/, '');
+let T = '', DATA = null, FILTER = '';
+
+const ICONS = {
+  eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  heart:'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+  comment:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  folder:'<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+  link:'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  more:'<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+  ext:'<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>',
+  msg:'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+  refresh:'<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
+  archive:'<polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>',
+  trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  check:'<polyline points="20 6 9 17 4 12"/>',
+  star:'<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+  logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
+};
+const ic = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n] || ''}</svg>`;
+
+const $ = (s, el) => (el || document).querySelector(s);
+const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ss = { get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch(e){} }, del(k){ try { localStorage.removeItem(k); } catch(e){} } };
+const thumb = (id, w) => `https://lh3.googleusercontent.com/d/${id}=w${w}`;
+const thumb2 = (id, w) => `https://drive.google.com/thumbnail?id=${id}&sz=w${w}`;
+const imgTag = (id, w, cls) => id ? `<img ${cls ? `class="${cls}"` : ''} src="${thumb(id, w)}" loading="lazy" alt="" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src='${thumb2(id, w)}'}">` : '';
+const galUrl = slug => SITE + '?g=' + encodeURIComponent(slug);
+const today = () => new Date().toISOString().slice(0, 10);
+const fmtDate = d => { if (!d) return ''; try { const x = /^\d{4}-\d{2}-\d{2}$/.test(d) ? new Date(d + 'T12:00:00') : new Date(d); return x.toLocaleDateString('he-IL', { day:'numeric', month:'short', year:'numeric' }); } catch(e) { return d; } };
+const fmtTime = d => { try { return new Date(d).toLocaleString('he-IL', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }); } catch(e) { return d; } };
+const randPw = () => { const c = 'abcdefghjkmnpqrstuvwxyz23456789'; let s = ''; for (let i = 0; i < 6; i++) s += c[Math.floor(Math.random() * c.length)]; return s; };
+const slugify = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+
+let toastT;
+function toast(msg, bad) { const t = $('#toast'); t.textContent = msg; t.className = 'show' + (bad ? ' bad' : ''); clearTimeout(toastT); toastT = setTimeout(() => t.className = '', bad ? 4500 : 2600); }
+function copyText(t) {
+  const fb = () => { const a = document.createElement('textarea'); a.value = t; a.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(a); a.select(); let ok = false; try { ok = document.execCommand('copy'); } catch(e){} a.remove(); return ok; };
+  try { if (navigator.clipboard) return navigator.clipboard.writeText(t).then(() => true, fb); } catch(e){}
+  return Promise.resolve(fb());
+}
+const copy = (t, msg) => copyText(t).then(ok => toast(ok ? (msg || 'הועתק') : 'לא הצלחתי להעתיק', !ok));
+
+async function api(fn, ...args) {
+  const r = await fetch(CFG.API_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify({ fn, args }), redirect:'follow' });
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || 'error');
+  return j.result;
+}
+async function call(fn, ...a) {
+  try { return await api(fn, T, ...a); }
+  catch (e) {
+    if (String(e.message) === 'auth') { T = ''; ss.del('adm'); closeModal(); showLogin('פג תוקף ההתחברות. היכנסו שוב.'); }
+    throw e;
+  }
+}
+const fail = e => { if (String(e && e.message) !== 'auth') toast(String((e && e.message) || e), true); };
+
+/* ───── modal ───── */
+function modal(title, body, foot, size) {
+  const m = $('#modal');
+  m.innerHTML = `<div class="mcard ${size || ''}"><div class="mhead"><h3>${title}</h3><button class="mclose" data-close>${ic('x')}</button></div>${body}${foot ? `<div class="mfoot">${foot}</div>` : ''}</div>`;
+  m.classList.add('open');
+  $$('[data-close]', m).forEach(b => b.onclick = closeModal);
+  return m;
+}
+function closeModal() { const m = $('#modal'); m.classList.remove('open'); m.innerHTML = ''; }
+$('#modal').addEventListener('mousedown', e => { if (e.target.id === 'modal') closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+function confirmBox(title, html, okLabel, danger) {
+  return new Promise(res => {
+    const m = modal(title, `<div class="mbody">${html}</div>`, `<button class="btn ghost" data-no>ביטול</button><button class="btn ${danger ? 'danger' : 'pri'}" data-yes>${okLabel}</button>`);
+    $('[data-no]', m).onclick = () => { closeModal(); res(null); };
+    $('[data-yes]', m).onclick = () => { const r = { ok: true }; $$('input[type=checkbox]', m).forEach(c => r[c.name] = c.checked); closeModal(); res(r); };
+  });
+}
+
+/* ───── login ───── */
+function showLogin(msg) {
+  $('#app').innerHTML = `<div class="login"><form class="lcard" id="lf">
+    <div class="lt">ניהול גלריות</div><p>הזינו את סיסמת הניהול</p>
+    <input class="inp" type="password" id="lp" autocomplete="current-password" autofocus>
+    <button class="btn pri wide" id="lb">כניסה</button>
+    <div class="err" id="le">${esc(msg || '')}</div></form></div>`;
+  $('#lf').onsubmit = async e => {
+    e.preventDefault();
+    const b = $('#lb'); b.disabled = true; $('#le').textContent = '';
+    try {
+      const r = await api('adminLogin', $('#lp').value);
+      if (r.error) {
+        $('#le').textContent = { wrong:'הסיסמה שגויה', toomany:'יותר מדי ניסיונות. נסו שוב בעוד 15 דקות.',
+          setpassword:'עדיין לא נקבעה סיסמת ניהול. בקובץ Code.gs בגוגל, שנו את ADMIN_PASSWORD בשורה הראשונה (לפחות 6 תווים), שמרו ופרסו גרסה חדשה.' }[r.error] || r.error;
+        b.disabled = false; return;
+      }
+      T = r.token; ss.set('adm', T); loadAll();
+    } catch (err) { $('#le').textContent = 'אין חיבור לשרת: ' + err.message; b.disabled = false; }
+  };
+}
+
+/* ───── dashboard ───── */
+async function loadAll(silent) {
+  if (!silent) $('#app').innerHTML = '<div class="spinner"></div>';
+  try { DATA = await call('adminGetData', SITE); renderDash(); }
+  catch (e) { if (String(e.message) !== 'auth') $('#app').innerHTML = `<div class="login"><div class="lcard"><div class="lt">שגיאה</div><p>${esc(e.message)}</p><button class="btn pri" onclick="loadAll()">נסו שוב</button></div></div>`; }
+}
+
+const STATE = { ok:['פעילה','ok'], expired:['פג תוקף','expired'], unavailable:['בארכיון','unavailable'] };
+
+function renderDash() {
+  const s = DATA.settings, gs = DATA.galleries;
+  const views = gs.reduce((a, g) => a + g.views, 0), subs = gs.reduce((a, g) => a + g.submitted, 0);
+  $('#app').innerHTML = `
+    <header class="top"><div class="top-in">
+      <div class="brand">${esc(s.studioName || 'הגלריות שלי')}<small>ניהול</small></div>
+      <a class="btn ghost" href="${esc(DATA.rootUrl)}" target="_blank" rel="noopener">${ic('folder')}<span class="lbl">התיקייה בדרייב</span></a>
+      <button class="btn ghost" id="brev">${ic('star')}<span class="lbl">המלצות</span></button>
+      <button class="btn ghost" id="bset">${ic('gear')}<span class="lbl">הגדרות</span></button>
+      <button class="btn ghost" id="bout" title="יציאה">${ic('logout')}</button>
+      <button class="btn pri" id="bnew">${ic('plus')}<span class="lbl">גלריה חדשה</span></button>
+    </div></header>
+    <div class="wrap">
+      ${gs.length ? `<div class="toolbar">
+        <div class="summary"><b>${gs.length}</b> גלריות · <b>${views}</b> צפיות · <b>${subs}</b> בחירות שהתקבלו</div>
+        <input class="inp" id="q" placeholder="חיפוש לפי שם או לקוח…" value="${esc(FILTER)}">
+      </div><div class="ggrid" id="grid"></div>` : `
+      <div class="empty"><h2>עוד אין כאן גלריות</h2>
+        <ol><li>העלו תיקיית תמונות לתוך התיקייה <a href="${esc(DATA.rootUrl)}" target="_blank" style="text-decoration:underline">״גלריות ללקוחות״</a> בדרייב</li>
+        <li>לחצו על ״גלריה חדשה״ ובחרו את התיקייה</li><li>שלחו ללקוח את הקישור</li></ol><br>
+        <button class="btn pri" onclick="openEditor()">${ic('plus')} גלריה חדשה</button></div>`}
+    </div>`;
+  $('#bnew').onclick = () => openEditor();
+  $('#bset').onclick = openSettings;
+  $('#brev').onclick = openReviews;
+  $('#bout').onclick = () => { T = ''; ss.del('adm'); showLogin(); };
+  const q = $('#q'); if (q) q.oninput = () => { FILTER = q.value; renderCards(); };
+  renderCards();
+}
+
+function renderCards() {
+  const grid = $('#grid'); if (!grid) return;
+  const f = FILTER.trim().toLowerCase();
+  const list = DATA.galleries.filter(g => !f || (g.title + ' ' + g.client + ' ' + g.slug).toLowerCase().includes(f));
+  grid.innerHTML = list.map((g, i) => {
+    const st = STATE[g.state] || STATE.ok;
+    return `<div class="gcard" style="animation-delay:${Math.min(i, 12) * 30}ms" data-id="${g.id}">
+      <div class="gcover" data-a="open">${imgTag(g.coverId, 700)}<span class="pill ${st[1]}">${st[0]}</span>${g.password ? `<span class="lockic" title="מוגן בסיסמה">${ic('lock')}</span>` : ''}</div>
+      <div class="gbody">
+        <div class="gt">${esc(g.title || g.slug)}</div>
+        <div class="gs">${esc([g.client, fmtDate(g.date)].filter(Boolean).join(' · '))}</div>
+        <div class="stats"><span title="צפיות">${ic('eye')}${g.views}</span><span title="הורדות">${ic('download')}${g.downloads}</span><span title="תמונות שסומנו כמועדפות">${ic('heart')}${g.favorites}</span><span title="הערות">${ic('comment')}${g.comments}</span></div>
+        ${g.submitted ? `<span class="selb" data-a="sel">${ic('check')}התקבלה בחירה${g.submitted > 1 ? ` (${g.submitted})` : ''}</span>` : ''}
+        <div class="gacts">
+          <button class="btn ghost sm" data-a="copy">${ic('link')}קישור</button>
+          <button class="btn ghost sm" data-a="edit">${ic('edit')}עריכה</button>
+          <button class="btn ghost sm" data-a="sel">${ic('heart')}בחירות</button>
+          <button class="btn ghost sm more" data-a="more" title="עוד">${ic('more')}</button>
+        </div>
+      </div></div>`;
+  }).join('') || '<p style="color:var(--muted)">לא נמצאו גלריות</p>';
+  $$('.gcard', grid).forEach(c => c.addEventListener('click', e => {
+    const a = e.target.closest('[data-a]'); if (!a) return;
+    const g = DATA.galleries.find(x => x.id === c.dataset.id);
+    ({ open: () => window.open(galUrl(g.slug), '_blank'), copy: () => copy(galUrl(g.slug), 'הקישור הועתק'),
+       edit: () => openEditor(g), sel: () => openSelections(g), more: () => openMore(g) })[a.dataset.a]();
+  }));
+}
+
+function clientMsg(g) {
+  return `היי${g.client ? ' ' + g.client : ''}, הגלריה שלך מוכנה 📸\n${galUrl(g.slug)}${g.password ? `\nסיסמה: ${g.password}` : ''}`;
+}
+
+function openMore(g) {
+  const archived = g.status === 'archived';
+  const m = modal(esc(g.title || g.slug), `<div class="menu">
+    <button data-m="open">${ic('ext')}פתיחת הגלריה</button>
+    <button data-m="msg">${ic('msg')}העתקת הודעה ללקוח (קישור + סיסמה)</button>
+    <a href="https://drive.google.com/drive/folders/${esc(g.folderId)}" target="_blank" rel="noopener">${ic('folder')}פתיחת התיקייה בדרייב</a>
+    <button data-m="refresh">${ic('refresh')}רענון רשימת התמונות</button>
+    <button data-m="archive">${ic('archive')}${archived ? 'החזרה מהארכיון' : 'העברה לארכיון (הגלריה תיסגר ללקוח)'}</button>
+    <button data-m="del" class="red">${ic('trash')}מחיקת הגלריה</button></div>`);
+  $$('[data-m]', m).forEach(b => b.onclick = async () => {
+    const k = b.dataset.m;
+    if (k === 'open') { window.open(galUrl(g.slug), '_blank'); closeModal(); }
+    if (k === 'msg') { copy(clientMsg(g), 'ההודעה הועתקה. אפשר להדביק בוואטסאפ'); closeModal(); }
+    if (k === 'refresh') { closeModal(); toast('מרענן…'); try { const r = await call('adminRefresh', g.id); toast(`הרשימה עודכנה: ${r.count} קבצים`); } catch (e) { fail(e); } }
+    if (k === 'archive') { closeModal(); try { await call('adminSetStatus', g.id, archived ? 'active' : 'archived'); toast(archived ? 'הגלריה פעילה שוב' : 'הגלריה הועברה לארכיון'); loadAll(true); } catch (e) { fail(e); } }
+    if (k === 'del') {
+      const r = await confirmBox('מחיקת גלריה', `<p class="note">הגלריה "${esc(g.title || g.slug)}" תוסר מהאתר, יחד עם הבחירות וההערות שלה.<br><b>התמונות עצמן לא יימחקו מהדרייב.</b></p>
+        <label class="sw"><span class="t">להפוך את התיקייה בדרייב לפרטית<small>כדי שאף אחד לא יוכל לפתוח את התמונות דרך קישור</small></span><input type="checkbox" name="priv" checked><i></i></label>`, 'מחיקה', true);
+      if (!r) return;
+      try { await call('adminDeleteGallery', g.id, r.priv); toast('הגלריה נמחקה'); loadAll(true); } catch (e) { fail(e); }
+    }
+  });
+}
+
+/* ───── editor ───── */
+let ED = null;
+function openEditor(g) {
+  const isNew = !g;
+  ED = Object.assign({ id:'', folderId:'', title:'', client:'', clientEmail:'', date: today(), slug:'', password:'', expires:'',
+    allowDownload:true, allowFavorites:true, allowComments:true, selectionLimit:0, watermark:'', lang:'he', coverId:'', coverPos:'50% 50%', message:'', notes:'' }, g || {});
+  ED._slugTouched = !isNew;
+  const sw = (k, t, sub) => `<label class="sw"><span class="t">${t}${sub ? `<small>${sub}</small>` : ''}</span><input type="checkbox" data-k="${k}" ${ED[k] ? 'checked' : ''}><i></i></label>`;
+  const m = modal(isNew ? 'גלריה חדשה' : 'עריכת גלריה', `<div class="mbody"><form id="ef" autocomplete="off">
+    <div class="fsec"><h4>תיקייה בדרייב</h4>
+      <div class="fl"><div class="inline"><select class="inp" id="e-folder"><option value="">טוען תיקיות…</option></select>
+        <button type="button" class="btn ghost" id="e-new">${ic('plus')}חדשה</button><button type="button" class="btn ghost" id="e-paste">${ic('link')}קישור</button></div>
+        <div id="e-folderx"></div>
+        <div class="finfo" id="e-finfo"></div></div>
+    </div>
+    <div class="fsec"><h4>פרטים</h4>
+      <div class="frow"><div class="fl"><label>שם הגלריה</label><input class="inp" data-k="title" value="${esc(ED.title)}" placeholder="לדוגמה: החתונה של נועה ואיתי" required></div>
+        <div class="fl"><label>שם הלקוח</label><input class="inp" data-k="client" value="${esc(ED.client)}"></div></div>
+      <div class="frow"><div class="fl"><label>תאריך האירוע</label><input class="inp" type="date" data-k="date" value="${esc(ED.date)}"></div>
+        <div class="fl"><label>אימייל הלקוח (לשימושך)</label><input class="inp ltr" type="email" data-k="clientEmail" value="${esc(ED.clientEmail)}"></div></div>
+      <div class="frow one"><div class="fl"><label>כתובת הגלריה</label>
+        <div class="urlbox"><span title="${esc(SITE)}">${esc(SITE.replace(/^https?:\/\//, ''))}?g=</span><input data-k="slug" value="${esc(ED.slug)}" placeholder="noa-itay"></div>
+        <div class="hint">אותיות באנגלית, מספרים ומקפים. אם תשאירו ריק, תיווצר כתובת אקראית.</div></div></div>
+    </div>
+    <div class="fsec"><h4>גישה</h4>
+      <div class="frow"><div class="fl"><label>סיסמה</label><div class="inline"><input class="inp ltr" data-k="password" value="${esc(ED.password)}" placeholder="ללא סיסמה"><button type="button" class="btn ghost" id="e-gen">יצירה</button></div></div>
+        <div class="fl"><label>תאריך תפוגה</label><input class="inp" type="date" data-k="expires" value="${esc(ED.expires)}"><div class="hint">ריק = ללא הגבלה</div></div></div>
+    </div>
+    <div class="fsec"><h4>אפשרויות ללקוח</h4>
+      ${sw('allowDownload', 'הורדת תמונות', 'הורדת תמונה בודדת או את כל התיקייה באיכות מקורית')}
+      ${sw('allowFavorites', 'בחירת מועדפים', 'הלקוח מסמן תמונות בלב ושולח לך את הבחירה')}
+      <div class="frow" id="e-limrow"><div class="fl"><label>מספר תמונות מקסימלי לבחירה</label><input class="inp" type="number" min="0" data-k="selectionLimit" value="${ED.selectionLimit || ''}" placeholder="ללא הגבלה"><div class="hint">שימושי לבחירת תמונות לאלבום</div></div></div>
+      ${sw('allowComments', 'הערות על תמונות', 'הלקוח יכול לכתוב לך הערה על כל תמונה (למשל בקשת עריכה)')}
+      <div class="frow"><div class="fl"><label>סימן מים</label><input class="inp" data-k="watermark" value="${esc(ED.watermark)}" placeholder="לדוגמה: © שם הסטודיו"><div class="hint">מופיע על התמונות בתצוגה בלבד, הקבצים בדרייב לא משתנים</div></div>
+        <div class="fl"><label>שפת הגלריה</label><select class="inp" data-k="lang"><option value="he">עברית</option><option value="en">English</option></select></div></div>
+      <div id="e-dlnote"></div>
+    </div>
+    <div class="fsec"><h4>תמונת שער</h4>
+      <div class="covers" id="e-covers"><span class="finfo">בחרו תיקייה כדי לבחור תמונת שער</span></div>
+      <div id="e-focal"></div>
+    </div>
+    <div class="fsec"><h4>טקסטים</h4>
+      <div class="frow one"><div class="fl"><label>הודעת פתיחה ללקוח (מופיעה מתחת לשער)</label><textarea class="inp" data-k="message" placeholder="תודה שבחרתם בי לתעד את היום המיוחד שלכם…">${esc(ED.message)}</textarea></div></div>
+      <div class="frow one"><div class="fl"><label>הערות פנימיות (רק אתה רואה)</label><textarea class="inp" data-k="notes" style="min-height:60px">${esc(ED.notes)}</textarea></div></div>
+    </div>
+  </form></div>`, `<button class="btn ghost" data-close>ביטול</button><button class="btn pri" id="e-save">${isNew ? 'יצירת הגלריה' : 'שמירה'}</button>`, 'wide');
+
+  $('[data-k=lang]', m).value = ED.lang;
+  const titleI = $('[data-k=title]', m), slugI = $('[data-k=slug]', m);
+  slugI.oninput = () => { ED._slugTouched = true; };
+  titleI.oninput = () => { if (!ED._slugTouched) slugI.value = slugify(titleI.value); };
+  $('#e-gen').onclick = () => { $('[data-k=password]', m).value = randPw(); };
+  const favSw = $('[data-k=allowFavorites]', m), dlSw = $('[data-k=allowDownload]', m), wmI = $('[data-k=watermark]', m);
+  const sync = () => {
+    $('#e-limrow').style.display = favSw.checked ? '' : 'none';
+    $('#e-dlnote').innerHTML = (!dlSw.checked || wmI.value.trim()) ? `<div class="boxnote">שימו לב: כפתורי ההורדה מוסתרים וסימן המים מוצג בדפדפן, אבל כל מי שמחזיק בקישור לגלריה יכול טכנית להגיע לקבצים המקוריים בדרייב. זו הגנה מפני הורדה נוחה, לא חסימה מוחלטת.</div>` : '';
+  };
+  favSw.onchange = sync; dlSw.onchange = sync; wmI.oninput = sync; sync();
+
+  const sel = $('#e-folder');
+  sel.onchange = () => { ED.folderId = sel.value; if (sel.value) loadCovers(false); };
+  $('#e-new').onclick = () => {
+    $('#e-folderx').innerHTML = `<div class="inline" style="margin-top:8px"><input class="inp" id="e-nfn" placeholder="שם התיקייה" value="${esc(titleI.value || $('[data-k=client]', m).value)}"><button type="button" class="btn pri" id="e-nfb">יצירה</button></div>`;
+    $('#e-nfn').focus();
+    $('#e-nfb').onclick = async () => {
+      const b = $('#e-nfb'); b.disabled = true;
+      try {
+        const f = await call('adminCreateFolder', $('#e-nfn').value);
+        addFolderOpt(f); $('#e-folderx').innerHTML = '';
+        $('#e-finfo').innerHTML = `התיקייה נוצרה. <a href="${esc(f.url)}" target="_blank" rel="noopener">פתחו אותה בדרייב</a> והעלו אליה את התמונות, ואז לחצו <a href="#" id="e-rf">רענון</a>.`;
+        $('#e-rf').onclick = e => { e.preventDefault(); loadCovers(true); };
+        $('#e-covers').innerHTML = '<span class="finfo">התיקייה ריקה עדיין</span>';
+      } catch (e) { fail(e); b.disabled = false; }
+    };
+  };
+  $('#e-paste').onclick = () => {
+    $('#e-folderx').innerHTML = `<div class="inline" style="margin-top:8px"><input class="inp ltr" id="e-pl" placeholder="https://drive.google.com/drive/folders/..."><button type="button" class="btn pri" id="e-plb">אישור</button></div>`;
+    $('#e-pl').focus();
+    $('#e-plb').onclick = async () => {
+      const b = $('#e-plb'); b.disabled = true;
+      try { const f = await call('adminFolderFromLink', $('#e-pl').value); addFolderOpt(f); $('#e-folderx').innerHTML = ''; loadCovers(false); }
+      catch (e) { fail(e); b.disabled = false; }
+    };
+  };
+  call('adminListFolders').then(r => {
+    const opts = r.folders.map(f => {
+      const used = f.linkedTo && f.id !== ED.folderId;
+      return `<option value="${esc(f.id)}" ${used ? 'disabled' : ''}>${esc(f.name)}${used ? ' — בשימוש: ' + esc(f.linkedTo) : ''}</option>`;
+    });
+    let html = '<option value="">בחרו תיקייה…</option>' + opts.join('');
+    if (ED.folderId && !r.folders.some(f => f.id === ED.folderId)) html += `<option value="${esc(ED.folderId)}">התיקייה הנוכחית</option>`;
+    sel.innerHTML = html;
+    sel.value = ED.folderId || '';
+    if (!r.folders.length && !ED.folderId) $('#e-finfo').innerHTML = 'אין עדיין תיקיות בתוך ״גלריות ללקוחות״. צרו תיקייה חדשה או הדביקו קישור לתיקייה קיימת.';
+    if (ED.folderId) loadCovers(false);
+  }).catch(fail);
+
+  $('#e-save').onclick = async () => {
+    const data = { id: ED.id, folderId: ED.folderId, coverId: ED.coverId, coverPos: ED.coverPos };
+    $$('[data-k]', m).forEach(i => { data[i.dataset.k] = i.type === 'checkbox' ? i.checked : i.value; });
+    if (!data.folderId) return toast('בחרו תיקייה לגלריה', true);
+    if (!data.title.trim()) { titleI.focus(); return toast('תנו שם לגלריה', true); }
+    const b = $('#e-save'); b.disabled = true; b.textContent = 'שומר…';
+    try {
+      const r = await call('adminSaveGallery', data);
+      closeModal();
+      await loadAll(true);
+      const g = DATA.galleries.find(x => x.id === r.id);
+      if (isNew && g) showShare(g); else toast('נשמר');
+    } catch (e) { fail(e); b.disabled = false; b.textContent = isNew ? 'יצירת הגלריה' : 'שמירה'; }
+  };
+}
+
+function addFolderOpt(f) {
+  const sel = $('#e-folder');
+  if (!$$('option', sel).some(o => o.value === f.id)) sel.insertAdjacentHTML('beforeend', `<option value="${esc(f.id)}">${esc(f.name)}</option>`);
+  sel.value = f.id; ED.folderId = f.id;
+}
+
+async function loadCovers(fresh) {
+  const box = $('#e-covers'), info = $('#e-finfo');
+  if (!box) return;
+  box.innerHTML = '<span class="finfo">טוען תמונות…</span>';
+  try {
+    const r = await call('adminFolderPhotos', ED.folderId, fresh);
+    if (!$('#e-covers')) return;
+    info.innerHTML = `${r.count} קבצים${r.sections.length ? ` ב־${r.sections.length} תת־תיקיות (${r.sections.map(esc).join(', ')})` : ''} · <a href="${esc(r.url)}" target="_blank" rel="noopener">פתיחה בדרייב</a> · <a href="#" id="e-rf2">רענון</a>`;
+    $('#e-rf2').onclick = e => { e.preventDefault(); loadCovers(true); };
+    const imgs = r.items.filter(i => !i.v);
+    if (!imgs.length) { box.innerHTML = '<span class="finfo">אין עדיין תמונות בתיקייה</span>'; ED.coverId = ''; renderFocal(); return; }
+    if (!ED.coverId || !r.items.some(i => i.id === ED.coverId)) { ED.coverId = imgs[0].id; ED.coverPos = '50% 50%'; }
+    box.innerHTML = imgs.map(i => `<button type="button" data-id="${esc(i.id)}" class="${i.id === ED.coverId ? 'on' : ''}" title="${esc(i.n)}">${imgTag(i.id, 240)}</button>`).join('');
+    $$('button', box).forEach(b => b.onclick = () => {
+      if (ED.coverId !== b.dataset.id) { ED.coverId = b.dataset.id; ED.coverPos = '50% 50%'; }
+      $$('button', box).forEach(x => x.classList.toggle('on', x === b));
+      renderFocal();
+    });
+    renderFocal();
+  } catch (e) { box.innerHTML = `<span class="finfo">${esc(e.message)}</span>`; }
+}
+
+/* בחירת נקודת המרכז של תמונת השער */
+function renderFocal() {
+  const box = $('#e-focal'); if (!box) return;
+  if (!ED.coverId) { box.innerHTML = ''; return; }
+  const src = w => thumb(ED.coverId, w), fb = w => `onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src='${thumb2(ED.coverId, w)}'}"`;
+  box.innerHTML = `<div class="focal">
+    <div><div class="fl"><span class="lab">נקודת המרכז: לחצו (או גררו) על החלק החשוב בתמונה</span></div>
+      <div class="fp-main" id="fp"><img src="${src(900)}" ${fb(900)} alt=""><span class="fp-dot" id="fp-dot"></span></div></div>
+    <div class="fp-prev">
+      <div><div class="pv pv-d"><img class="fp-pv" src="${src(900)}" ${fb(900)} alt=""></div><small>מחשב</small></div>
+      <div><div class="pv pv-m"><img class="fp-pv" src="${src(600)}" ${fb(600)} alt=""></div><small>טלפון</small></div>
+    </div></div>`;
+  const apply = () => {
+    const [x, y] = ED.coverPos.split(' ').map(parseFloat);
+    const d = $('#fp-dot'); d.style.left = x + '%'; d.style.top = y + '%';
+    $$('.fp-pv', box).forEach(i => i.style.objectPosition = ED.coverPos);
+  };
+  const fp = $('#fp');
+  const setFrom = e => {
+    const r = fp.getBoundingClientRect();
+    const x = Math.round(Math.min(100, Math.max(0, (e.clientX - r.left) / r.width * 100)));
+    const y = Math.round(Math.min(100, Math.max(0, (e.clientY - r.top) / r.height * 100)));
+    ED.coverPos = x + '% ' + y + '%'; apply();
+  };
+  let down = false;
+  fp.addEventListener('pointerdown', e => { down = true; try { fp.setPointerCapture(e.pointerId); } catch (_) {} setFrom(e); });
+  fp.addEventListener('pointermove', e => { if (down) setFrom(e); });
+  fp.addEventListener('pointerup', () => { down = false; });
+  fp.addEventListener('pointercancel', () => { down = false; });
+  apply();
+}
+
+function showShare(g) {
+  const m = modal('הגלריה מוכנה 🎉', `<div class="mbody">
+    <p class="note">זה הקישור לשלוח ללקוח${g.password ? ' (יחד עם הסיסמה)' : ''}:</p>
+    <div class="inline"><input class="inp ltr" readonly value="${esc(galUrl(g.slug))}"><button class="btn ghost" id="s-c">העתקה</button></div>
+    ${g.password ? `<p class="note" style="margin-top:10px">סיסמה: <b class="ltr">${esc(g.password)}</b></p>` : ''}
+  </div>`, `<a class="btn ghost" href="${esc(galUrl(g.slug))}" target="_blank" rel="noopener">${ic('ext')}פתיחה</a><button class="btn pri" id="s-m">${ic('msg')}העתקת הודעה ללקוח</button>`);
+  $('#s-c', m).onclick = () => copy(galUrl(g.slug), 'הקישור הועתק');
+  $('#s-m', m).onclick = () => copy(clientMsg(g), 'ההודעה הועתקה. אפשר להדביק בוואטסאפ');
+}
+
+/* ───── selections ───── */
+async function openSelections(g) {
+  const m = modal('בחירות והערות · ' + esc(g.title || g.slug), '<div class="mbody"><div class="spinner" style="margin:40px auto"></div></div>', '', 'xwide');
+  let r;
+  try { r = await call('adminGetSelections', g.id); } catch (e) { fail(e); closeModal(); return; }
+  if (!$('#modal').classList.contains('open')) return;
+  const noExt = n => n.replace(/\.[^.]+$/, '');
+  const vis = r.visitors.filter(v => v.favs.length || v.submittedAt);
+  let html = '';
+  if (!vis.length && !r.comments.length) html = '<p class="note" style="padding:30px 0;text-align:center">עוד אין בחירות או הערות בגלריה הזו.</p>';
+  vis.forEach((v, i) => {
+    html += `<div class="vis"><div class="vhead"><div><div class="vname">${esc(v.name || 'לקוח ללא שם')} ${v.submittedAt ? `<span class="tag ok">נשלח ${esc(fmtTime(v.submittedAt))}</span>` : '<span class="tag">טרם נשלח</span>'}</div>
+        <div class="vmeta">${v.favs.length} תמונות${v.email ? ' · <span class="ltr">' + esc(v.email) + '</span>' : ''}</div></div>
+        <div class="inline"><button class="btn ghost sm" data-cp="${i}" data-mode="comma">העתקת שמות קבצים</button><button class="btn ghost sm" data-cp="${i}" data-mode="space" title="שמות ללא סיומת, מופרדים ברווח">ללא סיומת</button></div></div>
+      ${v.note ? `<div class="vnote">${esc(v.note)}</div>` : ''}
+      <div class="thumbs">${v.favs.map(f => `<figure>${imgTag(f.id, 240)}<figcaption>${esc(f.n)}</figcaption></figure>`).join('')}</div></div>`;
+  });
+  if (r.comments.length) {
+    html += `<h5>הערות על תמונות (${r.comments.length})</h5>` + r.comments.map(c =>
+      `<div class="cm">${imgTag(c.fileId, 160)}<div><div class="ct">${esc(c.text)}</div><div class="cmeta">${esc(c.name || '')} · <span class="ltr">${esc(c.fileName)}</span> · ${esc(fmtTime(c.ts))}</div></div></div>`).join('');
+  }
+  $('.mbody', m).innerHTML = html;
+  $$('[data-cp]', m).forEach(b => b.onclick = () => {
+    const v = vis[+b.dataset.cp];
+    const names = v.favs.map(f => b.dataset.mode === 'space' ? noExt(f.n) : f.n);
+    copy(names.join(b.dataset.mode === 'space' ? ' ' : ', '), `${names.length} שמות קבצים הועתקו`);
+  });
+}
+
+/* ───── reviews ───── */
+async function openReviews() {
+  const m = modal('המלצות מלקוחות', '<div class="mbody"><div class="spinner" style="margin:40px auto"></div></div>', '', 'wide');
+  let r;
+  try { r = await call('adminGetReviews'); } catch (e) { fail(e); closeModal(); return; }
+  if (!$('#modal').classList.contains('open')) return;
+  const list = (r.reviews || []).slice().sort((a, b) => String(b.ts).localeCompare(String(a.ts)));
+  const stars = n => n ? `<span style="color:#f2b01e;letter-spacing:1px">${'★'.repeat(n)}</span><span style="color:#ddd;letter-spacing:1px">${'★'.repeat(5 - n)}</span>` : '';
+  $('.mbody', m).innerHTML = !list.length ? '<p class="note" style="padding:30px 0;text-align:center">עוד לא התקבלו המלצות.</p>' :
+    list.map((v, i) => `<div class="vis"><div class="vhead"><div><div class="vname">${esc(v.name || 'לקוח ללא שם')} ${stars(+v.rating || 0)}</div>
+        <div class="vmeta">${esc(v.gallery || '')} · ${esc(fmtTime(v.ts))}</div></div>
+        <div class="inline"><button class="btn ghost sm" data-rc="${i}">העתקה</button><button class="btn ghost sm" data-rd="${i}" title="מחיקה">${ic('trash')}</button></div></div>
+      ${v.text ? `<div class="vnote" style="margin:0">${esc(v.text)}</div>` : ''}</div>`).join('');
+  $$('[data-rc]', m).forEach(b => b.onclick = () => { const v = list[+b.dataset.rc]; copy(`"${v.text}"${v.name ? '\n– ' + v.name : ''}`, 'ההמלצה הועתקה'); });
+  $$('[data-rd]', m).forEach(b => b.onclick = async () => {
+    const v = list[+b.dataset.rd];
+    if (!(await confirmBox('מחיקת המלצה', `<p class="note">למחוק את ההמלצה של ${esc(v.name || 'הלקוח')}?</p>`, 'מחיקה', true))) return openReviews();
+    try { await call('adminDeleteReview', v.id); toast('נמחק'); } catch (e) { fail(e); }
+    openReviews();
+  });
+}
+
+/* ───── settings ───── */
+function openSettings() {
+  const s = DATA.settings;
+  const f = (k, label, ph, cls, hint) => `<div class="fl"><label>${label}</label><input class="inp ${cls || ''}" data-s="${k}" value="${esc(s[k] || '')}" placeholder="${esc(ph || '')}">${hint ? `<div class="hint">${hint}</div>` : ''}</div>`;
+  const m = modal('הגדרות', `<div class="mbody">
+    <div class="fsec"><h4>המיתוג שלך</h4>
+      <div class="frow">${f('studioName', 'שם הסטודיו', 'לדוגמה: דני כהן צילום')}${f('tagline', 'משפט קצר מתחת לשם', 'צילום אירועים ומשפחה')}</div>
+      <div class="frow"><div class="fl"><label>לוגו</label><input class="inp ltr" data-s="logo" id="st-logo" value="${esc(s.logoUrl || (s.logoId ? 'https://drive.google.com/file/d/' + s.logoId + '/view' : ''))}" placeholder="logo.png">
+          <div class="hint">העלו את קובץ הלוגו ל־GitHub (כמו שהעליתם את שאר הקבצים) וכתבו כאן את שם הקובץ, למשל <b class="ltr">logo.png</b>. אפשר גם קישור לקובץ בדרייב. עדיף PNG עם רקע שקוף. ריק = יוצג שם הסטודיו.</div>
+          <div class="logoprev" id="st-lp"><img id="st-lpi" alt=""></div></div>
+        <div class="fl"><label>גודל הלוגו בשער</label><select class="inp" data-s="logoSize"><option value="s">קטן</option><option value="m">בינוני</option><option value="l">גדול</option><option value="xl">גדול מאוד</option></select>
+          <label style="margin-top:12px">צבע כפתורים</label><input class="inp" type="color" data-s="accent" value="${esc(s.accent || '#1a1a1a')}" style="padding:4px"></div></div>
+    </div>
+    <div class="fsec"><h4>תצוגת התמונות בגלריה</h4>
+      <div class="frow"><div class="fl"><label>גודל התמונות</label><select class="inp" data-s="gridSize"><option value="s">קטנות (יותר תמונות בשורה)</option><option value="m">בינוניות</option><option value="l">גדולות</option><option value="xl">גדולות מאוד</option></select></div>
+        <div class="fl"><label>רווח בין התמונות</label><select class="inp" data-s="gridGap"><option value="none">בלי רווח</option><option value="s">קטן</option><option value="m">בינוני</option><option value="l">גדול</option><option value="xl">גדול מאוד</option></select></div></div>
+      <div class="fl"><span class="lab">תצוגה מקדימה (מוקטנת)</span><div class="gprev" id="st-gp"></div></div>
+    </div>
+    <div class="fsec"><h4>פרטי קשר (מופיעים בתחתית כל גלריה)</h4>
+      <div class="frow">${f('phone', 'טלפון', '050-0000000', 'ltr')}${f('whatsapp', 'וואטסאפ', '050-0000000', 'ltr')}</div>
+      <div class="frow">${f('instagram', 'אינסטגרם', '@username', 'ltr')}${f('facebook', 'פייסבוק', 'page-name', 'ltr')}</div>
+      <div class="frow">${f('website', 'אתר', 'www.example.co.il', 'ltr')}${f('email', 'אימייל', 'me@example.com', 'ltr')}</div>
+    </div>
+    <div class="fsec"><h4>התראות</h4>
+      <div class="frow one">${f('notifyEmail', 'לאיזה מייל לשלוח הודעה כשלקוח שולח בחירה', DATA.accountEmail, 'ltr', 'ריק = ' + esc(DATA.accountEmail))}</div>
+    </div>
+    <div class="fsec"><h4>מתקדם</h4>
+      <div class="frow"><div class="fl"><label>התיקייה הראשית בדרייב</label><input class="inp ltr" data-s="rootFolder" value="${esc(DATA.rootUrl)}"><div class="hint">אפשר להחליף לתיקייה קיימת שלך</div></div>
+        <div class="fl"><label>סיסמת ניהול חדשה</label><input class="inp ltr" type="password" data-s="newPassword" placeholder="השאירו ריק כדי לא לשנות" autocomplete="new-password"></div></div>
+      <p class="finfo">כל הנתונים (גלריות, בחירות, הערות) נשמרים ב<a href="${esc(DATA.dbUrl)}" target="_blank" rel="noopener">גיליון הזה</a> בדרייב שלך.</p>
+    </div></div>`, `<button class="btn ghost" data-close>ביטול</button><button class="btn pri" id="st-save">שמירה</button>`, 'wide');
+  $('[data-s=logoSize]', m).value = s.logoSize || 'l';
+  $('[data-s=gridSize]', m).value = s.gridSize || 'm';
+  $('[data-s=gridGap]', m).value = s.gridGap || 'm';
+  const gp = () => { $('#st-gp').innerHTML = gridPreview($('[data-s=gridSize]', m).value, $('[data-s=gridGap]', m).value, $('#st-gp').clientWidth - 20); };
+  $('[data-s=gridSize]', m).onchange = gp; $('[data-s=gridGap]', m).onchange = gp; gp();
+  const lp = () => {
+    const v = $('#st-logo').value.trim(), id = (v.match(/[-\w]{25,}/) || [])[0];
+    const src = /drive\.google|docs\.google/.test(v) && id ? thumb(id, 400) : v ? (/^https?:/.test(v) ? v : SITE + v.replace(/^\/+/, '')) : '';
+    $('#st-lp').style.display = src ? 'block' : 'none';
+    if (src) $('#st-lpi').src = src;
+  };
+  $('#st-logo').oninput = lp; lp();
+  $('#st-save', m).onclick = async () => {
+    const data = {};
+    $$('[data-s]', m).forEach(i => data[i.dataset.s] = i.value.trim());
+    const b = $('#st-save'); b.disabled = true;
+    try {
+      const r = await call('adminSaveSettings', data);
+      closeModal();
+      if (r.relogin) { T = ''; ss.del('adm'); showLogin('הסיסמה עודכנה. היכנסו עם הסיסמה החדשה.'); return; }
+      toast('ההגדרות נשמרו'); loadAll(true);
+    } catch (e) { fail(e); b.disabled = false; }
+  };
+}
+
+function gridPreview(size, gap, W) {
+  W = Math.max(200, W || 600);
+  const target = 70 * ({ s: .7, m: 1, l: 1.35, xl: 1.8 }[size] || 1);
+  const g = ({ none: 0, s: 2, m: 4, l: 8, xl: 14 }[gap]);
+  const ars = [1.5, .67, 1.5, 1, .67, 1.5, 1.5, .67, 1, 1.5, .67, 1.5, 1.5, 1, .67, 1.5, .67, 1.5];
+  let html = '', row = [], sum = 0, rows = 0;
+  const flush = () => {
+    const h = (W - g * (row.length - 1)) / sum;
+    html += `<div class="r" style="gap:${g}px;margin-bottom:${g}px">${row.map(a => `<div style="width:${(a * h).toFixed(1)}px;height:${h.toFixed(1)}px"></div>`).join('')}</div>`;
+    row = []; sum = 0; rows++;
+  };
+  for (const a of ars) { row.push(a); sum += a; if (sum * target + g * (row.length - 1) >= W) { flush(); if (rows >= 3) break; } }
+  return html;
+}
+
+/* ───── boot ───── */
+if (!CFG.API_URL || /PASTE/.test(CFG.API_URL)) {
+  $('#app').innerHTML = '<div class="login"><div class="lcard"><div class="lt">כמעט מוכן</div><p>פתחו את הקובץ config.js ב־GitHub והדביקו בו את כתובת ה־Web app מ־Google Apps Script.</p></div></div>';
+} else {
+  T = ss.get('adm') || '';
+  if (T) loadAll(); else showLogin();
+}
+</script>
+</body>
+</html>
