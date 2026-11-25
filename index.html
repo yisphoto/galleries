@@ -172,6 +172,8 @@ textarea.field{min-height:100px;resize:vertical;line-height:1.5}
 .rev h3,.rev>p{text-align:center}
 #toast{position:fixed;bottom:26px;left:50%;transform:translate(-50%,16px);background:#161616;color:#fff;padding:12px 22px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:.3s;z-index:300;max-width:90vw;text-align:center}
 #toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.busy{display:flex;align-items:center;gap:10px;padding:16px 26px;font-size:16px;bottom:50%;transform:translate(-50%,50%);border-radius:16px}
+.tspin{width:20px;height:20px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;flex:none}
 
 /* ───── lock & messages ───── */
 .lock{position:fixed;inset:0;display:grid;place-items:center;background:#141414;color:#fff;overflow:hidden}
@@ -230,7 +232,7 @@ const DICT = {
     dlTitle:'הורדת התמונות', dlHelp:'התמונות יורדו באיכות מקורית, בקובץ ZIP אחד.', dlEverything:'כל התמונות',
     dlPhoneOnly:'הורדה של כל הגלריה אפשרית רק מהמחשב. בטלפון אפשר לשמור תמונה בודדת (נגיעה בתמונה ואז בכפתור ההורדה), או לסמן תמונות בלב ולשמור את המועדפים.',
     dlHelpParts:'התמונות יורדו באיכות מקורית. בגלריה גדולה ההורדה תתחלק לכמה קובצי ZIP.',
-    preparing:'מכין את ההורדה…', progress:'{n} מתוך {m} · {mb}', stop:'עצירה', dlDone:'ההורדה הסתיימה', dlFailed:'{n} קבצים לא ירדו. נסו להוריד אותם בנפרד.',
+    preparing:'מכין את התמונה…', prepDl:'מכין את ההורדה…', dlStarted:'ההורדה התחילה', progress:'{n} מתוך {m} · {mb}', stop:'עצירה', dlDone:'ההורדה הסתיימה', dlFailed:'{n} קבצים לא ירדו. נסו להוריד אותם בנפרד.',
     dlPart:'חלק {n} ירד', dlErr:'ההורדה נכשלה. נסו שוב.', saveImg:'שמירת התמונה', saveImgs:'שמירת {n} תמונות', readyTitle:'התמונות מוכנות', readyOne:'התמונה מוכנה',
     readySub:'לחצו כדי לשמור לגלריה בטלפון.', nextBatch:'נשארו עוד {n}. לחצו כדי להמשיך.', saveFavs:'שמירה לטלפון', dlFavs:'הורדת המועדפים', saved:'נשמר',
     revTitle:'נהניתם מהתמונות?', revSub:'אשמח מאוד אם תכתבו כמה מילים על החוויה. זה עוזר לי המון 🙏', revPh:'מה הכי אהבתם?', revLater:'אולי אחר כך', revThanks:'תודה רבה על ההמלצה!', revName:'השם שלכם',
@@ -251,7 +253,7 @@ const DICT = {
     dlTitle:'Download photos', dlHelp:'Photos download in full resolution as one ZIP file.', dlEverything:'All photos',
     dlPhoneOnly:'Downloading the whole gallery is available on a computer. On your phone you can save single photos (tap a photo, then the download button) or heart photos and save your favorites.',
     dlHelpParts:'Photos download in full resolution. Large galleries are split into several ZIP files.',
-    preparing:'Preparing download…', progress:'{n} of {m} · {mb}', stop:'Stop', dlDone:'Download complete', dlFailed:'{n} files failed. Try downloading them individually.',
+    preparing:'Preparing…', prepDl:'Preparing download…', dlStarted:'Download started', progress:'{n} of {m} · {mb}', stop:'Stop', dlDone:'Download complete', dlFailed:'{n} files failed. Try downloading them individually.',
     dlPart:'Part {n} downloaded', dlErr:'Download failed. Please try again.', saveImg:'Save photo', saveImgs:'Save {n} photos', readyTitle:'Your photos are ready', readyOne:'Your photo is ready',
     readySub:'Tap to save to your phone.', nextBatch:'{n} more left. Tap to continue.', saveFavs:'Save to phone', dlFavs:'Download favorites', saved:'Saved',
     revTitle:'Enjoying your photos?', revSub:'I\'d love a few words about your experience. It really helps 🙏', revPh:'What did you love most?', revLater:'Maybe later', revThanks:'Thank you for the review!', revName:'Your name',
@@ -316,7 +318,7 @@ function copyText(t) {
   return Promise.resolve(fallback());
 }
 let toastT;
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.remove('busy'); t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
 function fmtDate(d) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d || '')) return d || '';
   try { return new Date(d + 'T12:00:00').toLocaleDateString(RTL ? 'he-IL' : 'en-US', { day:'numeric', month:'long', year:'numeric' }); } catch(e) { return d; }
@@ -706,6 +708,23 @@ const MIME = { jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png', heic:'image
 const mimeOf = n => MIME[(String(n).split('.').pop() || '').toLowerCase()] || 'application/octet-stream';
 const fmtMB = b => b >= 1e9 ? (b / 1e9).toFixed(2) + ' GB' : Math.round(b / 1e6) + ' MB';
 
+// ניסיון להוריד ישר מגוגל (מהיר). אם הדפדפן חוסם – עוברים לשרת, וזוכרים את זה לשאר הקבצים
+let DIRECT = null;
+async function fetchDirect(it) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
+  try {
+    const r = await fetch(`https://drive.usercontent.google.com/download?id=${encodeURIComponent(it.id)}&export=download&confirm=t`, { signal: ctl.signal, credentials: 'omit' });
+    clearTimeout(t);
+    if (!r.ok || /text\/html/i.test(r.headers.get('content-type') || '')) return null;
+    const d = new Uint8Array(await r.arrayBuffer());
+    DIRECT = true;
+    return d;
+  } catch (e) {
+    clearTimeout(t);
+    if (DIRECT === null && e && e.name === 'TypeError') DIRECT = false;
+    return null;
+  }
+}
 async function fetchFile(it, tries) {
   tries = tries || 3;
   for (let a = 1; ; a++) {
@@ -715,6 +734,7 @@ async function fetchFile(it, tries) {
         if (!r.ok) throw new Error('http ' + r.status);
         return new Uint8Array(await r.arrayBuffer());
       }
+      if (DIRECT !== false) { const d = await fetchDirect(it); if (d) return d; }
       const f = await api('getFileData', SLUG, st.token, it.id);
       if (!f || f.error || !f.b64) throw new Error((f && f.error) || 'nodata');
       const r = await fetch('data:application/octet-stream;base64,' + f.b64);
@@ -747,13 +767,27 @@ async function shareFiles(files, title, sub) {
 }
 const canShareFiles = f => { try { return !!(navigator.share && navigator.canShare && navigator.canShare({ files: f })); } catch (e) { return false; } };
 
+function busy(msg) {
+  const t = $('#toast');
+  clearTimeout(toastT);
+  if (!msg) { t.classList.remove('show', 'busy'); return; }
+  t.innerHTML = `<span class="tspin"></span>${esc(msg)}`; t.classList.add('show', 'busy');
+}
+// במחשב ובאנדרואיד: הורדה מיידית (הקובץ נשמר בהורדות, בלי לפתוח את Drive)
+function quickDownload(it) {
+  const a = document.createElement('a');
+  a.href = dlUrl(it.id); a.rel = 'noopener'; a.style.display = 'none';
+  document.body.appendChild(a); a.click(); a.remove();
+}
 async function download(it) {
   api('logDownload', SLUG, st.token, 'file').catch(() => {});
   if (!HAS_KEY) return openUrl(dlUrl(it.id));
-  toast(L.preparing);
+  if (!IOS && !API_KEY) { quickDownload(it); toast(L.dlStarted); return; }
+  busy(L.preparing);
   let data;
   try { data = await fetchFile(it); }
-  catch (e) { if (/toolarge/.test(e && e.message)) return openUrl(dlUrl(it.id)); toast(L.dlErr); return; }
+  catch (e) { busy(false); if (/toolarge/.test(e && e.message)) return openUrl(dlUrl(it.id)); toast(L.dlErr); return; }
+  busy(false);
   const name = it.n || (it.id + '.jpg');
   if (IOS) {
     const f = new File([data], name, { type: mimeOf(name) });
@@ -797,7 +831,7 @@ async function saveFavsPhone(items) {
 function progressModal(total) {
   let n = 0, bytes = 0;
   const ui = { stopped: false, onStop: null };
-  modal(`<h3>${esc(L.preparing)}</h3><div class="prog"><i id="pgb"></i></div><div class="prog-t" id="pgt"></div>
+  modal(`<h3>${esc(L.prepDl)}</h3><div class="prog"><i id="pgb"></i></div><div class="prog-t" id="pgt"></div>
     <div class="row-btns"><button class="btn light" data-close>${esc(L.stop)}</button></div>`, null,
     () => { ui.stopped = true; if (ui.onStop) ui.onStop(); });
   const draw = () => { const b = $('#pgb'), t = $('#pgt'); if (b) b.style.width = (total ? n / total * 100 : 0) + '%'; if (t) t.textContent = fmt(L.progress, { n, m: total, mb: fmtMB(bytes) }); };
