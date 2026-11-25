@@ -773,7 +773,7 @@ function busy(msg) {
   if (!msg) { t.classList.remove('show', 'busy'); return; }
   t.innerHTML = `<span class="tspin"></span>${esc(msg)}`; t.classList.add('show', 'busy');
 }
-// במחשב ובאנדרואיד: הורדה מיידית (הקובץ נשמר בהורדות, בלי לפתוח את Drive)
+// במחשב: הורדה מיידית (הקובץ נשמר בהורדות, בלי לפתוח את Drive)
 function quickDownload(it) {
   const a = document.createElement('a');
   a.href = dlUrl(it.id); a.rel = 'noopener'; a.style.display = 'none';
@@ -782,7 +782,8 @@ function quickDownload(it) {
 async function download(it) {
   api('logDownload', SLUG, st.token, 'file').catch(() => {});
   if (!HAS_KEY) return openUrl(dlUrl(it.id));
-  if (!IOS && !API_KEY) { quickDownload(it); toast(L.dlStarted); return; }
+  // רק במחשב: בטלפון קישור של גוגל נפתח באפליקציית Drive, אז שם מורידים דרך האתר
+  if (!MOBILE && !API_KEY) { quickDownload(it); toast(L.dlStarted); return; }
   busy(L.preparing);
   let data;
   try { data = await fetchFile(it); }
