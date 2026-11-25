@@ -85,7 +85,7 @@ svg{display:block}
 .tile.is-fav .act-fav{background:#fff;color:var(--heart)}
 .tile.is-fav .act-fav svg path{fill:currentColor}
 .tile:not(.is-fav) .act-fav~.act{}
-@media(hover:none){.tile .acts{opacity:1;transform:none}.tile .act-dl{display:none}}
+@media(hover:none){.tile .acts{opacity:1;transform:none}}
 .tile .play{position:absolute;inset:0;display:grid;place-items:center;color:#fff;pointer-events:none;z-index:1}
 .tile .play svg{width:54px;height:54px;filter:drop-shadow(0 2px 10px rgba(0,0,0,.4))}
 .nodl img{-webkit-user-drag:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
@@ -124,8 +124,10 @@ svg{display:block}
 .lb-count{font-size:13px;opacity:.7;padding:0 10px;direction:ltr;font-variant-numeric:tabular-nums}
 .lb-name{flex:1;text-align:center;font-size:13px;opacity:.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr}
 #lb .ibtn:hover{background:rgba(255,255,255,.1)}
-.lb-stage{position:absolute;inset:60px 70px 76px;display:flex;align-items:center;justify-content:center;touch-action:pan-y}
-.lb-stage img{max-width:100%;max-height:100%;object-fit:contain;transition:opacity .2s}
+.lb-stage{position:absolute;inset:60px 70px 76px;display:flex;align-items:center;justify-content:center;touch-action:none;overflow:hidden}
+.lb-stage img{max-width:100%;max-height:100%;object-fit:contain;transition:opacity .2s;transform-origin:50% 50%;will-change:transform;cursor:zoom-in}
+.lb-stage img.zoomed{cursor:grab}
+.lb-stage img.anim{transition:transform .25s ease,opacity .2s}
 .lb-stage iframe{width:100%;height:100%;border:0}
 .lb-wm{position:absolute;inset:60px 70px 76px;background-image:var(--wm);background-size:300px auto;pointer-events:none;z-index:2}
 .lb-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:4;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;color:#fff;opacity:.6;transition:opacity .2s,background .2s}
@@ -151,6 +153,15 @@ textarea.field{min-height:100px;resize:vertical;line-height:1.5}
 .dl-list .btn{justify-content:space-between}
 .cmt{background:var(--soft);border-radius:12px;padding:10px 14px;font-size:14px;line-height:1.55;margin-bottom:8px;white-space:pre-wrap}
 .cmt-l{font-size:12px;color:var(--muted);margin-bottom:6px}
+.prog{height:8px;border-radius:4px;background:var(--soft);overflow:hidden;margin:6px 0 10px}
+.prog i{display:block;height:100%;width:0;background:var(--accent);border-radius:4px;transition:width .3s}
+.prog-t{font-size:13px;color:var(--muted);direction:rtl;font-variant-numeric:tabular-nums}
+.stars{display:flex;gap:4px;justify-content:center;margin:4px 0 14px;direction:ltr}
+.stars button{width:40px;height:40px;color:#d6d3ce;transition:transform .1s,color .15s}
+.stars button svg{width:32px;height:32px;margin:auto}
+.stars button.on{color:#f2b01e}
+.stars button:active{transform:scale(.88)}
+.rev h3,.rev>p{text-align:center}
 #toast{position:fixed;bottom:26px;left:50%;transform:translate(-50%,16px);background:#161616;color:#fff;padding:12px 22px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:.3s;z-index:300;max-width:90vw;text-align:center}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 
@@ -208,7 +219,12 @@ const DICT = {
     submitted:'הבחירה נשלחה לצלם. תודה!', submittedNote:'הבחירה נשלחה לצלם', backToAll:'לכל התמונות',
     empty:'עוד לא בחרת תמונות', emptySub:'לחצו על הלב שעל תמונה כדי להוסיף אותה למועדפים.',
     photos:'{n} תמונות', error:'משהו השתבש. נסו לרענן את הדף.', dlSection:'הורדת התיקייה',
-    dlTitle:'הורדת התמונות', dlHelp:'התמונות יורדו באיכות מקורית. תיפתח תיקייה ב־Google Drive. לחצו שם על כפתור ההורדה כדי לקבל קובץ ZIP.', dlEverything:'כל התמונות',
+    dlTitle:'הורדת התמונות', dlHelp:'התמונות יורדו באיכות מקורית, בקובץ ZIP אחד.', dlEverything:'כל התמונות',
+    dlHelpParts:'התמונות יורדו באיכות מקורית. בגלריה גדולה ההורדה תתחלק לכמה קובצי ZIP.',
+    preparing:'מכין את ההורדה…', progress:'{n} מתוך {m} · {mb}', stop:'עצירה', dlDone:'ההורדה הסתיימה', dlFailed:'{n} קבצים לא ירדו. נסו להוריד אותם בנפרד.',
+    dlPart:'חלק {n} ירד', dlErr:'ההורדה נכשלה. נסו שוב.', saveImg:'שמירת התמונה', saveImgs:'שמירת {n} תמונות', readyTitle:'התמונות מוכנות', readyOne:'התמונה מוכנה',
+    readySub:'לחצו כדי לשמור לגלריה בטלפון.', nextBatch:'נשארו עוד {n}. לחצו כדי להמשיך.', saveFavs:'שמירה לטלפון', dlFavs:'הורדת המועדפים', saved:'נשמר',
+    revTitle:'נהניתם מהתמונות?', revSub:'אשמח מאוד אם תכתבו כמה מילים על החוויה. זה עוזר לי המון 🙏', revPh:'מה הכי אהבתם?', revLater:'אולי אחר כך', revThanks:'תודה רבה על ההמלצה!', revName:'השם שלכם',
   },
   en: {
     view:'View gallery', pwTitle:'This gallery is password protected', pw:'Password', enter:'Enter', wrong:'Incorrect password', toomany:'Too many attempts. Please try again in a few minutes',
@@ -223,7 +239,12 @@ const DICT = {
     submitted:'Your selection was sent. Thank you!', submittedNote:'Selection sent', backToAll:'All photos',
     empty:'No favorites yet', emptySub:'Tap the heart on a photo to add it to your favorites.',
     photos:'{n} photos', error:'Something went wrong. Please refresh the page.', dlSection:'Download folder',
-    dlTitle:'Download photos', dlHelp:'Photos download in full resolution. A Google Drive folder will open. Use its download button to get a ZIP file.', dlEverything:'All photos',
+    dlTitle:'Download photos', dlHelp:'Photos download in full resolution as one ZIP file.', dlEverything:'All photos',
+    dlHelpParts:'Photos download in full resolution. Large galleries are split into several ZIP files.',
+    preparing:'Preparing download…', progress:'{n} of {m} · {mb}', stop:'Stop', dlDone:'Download complete', dlFailed:'{n} files failed. Try downloading them individually.',
+    dlPart:'Part {n} downloaded', dlErr:'Download failed. Please try again.', saveImg:'Save photo', saveImgs:'Save {n} photos', readyTitle:'Your photos are ready', readyOne:'Your photo is ready',
+    readySub:'Tap to save to your phone.', nextBatch:'{n} more left. Tap to continue.', saveFavs:'Save to phone', dlFavs:'Download favorites', saved:'Saved',
+    revTitle:'Enjoying your photos?', revSub:'I\'d love a few words about your experience. It really helps 🙏', revPh:'What did you love most?', revLater:'Maybe later', revThanks:'Thank you for the review!', revName:'Your name',
   }
 };
 let L = DICT.he, RTL = true;
@@ -243,6 +264,7 @@ const ICONS = {
   facebook:'<path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>',
   globe:'<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
   mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/>',
+  star:'<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="currentColor" stroke="none"/>',
 };
 const ic = n => n === 'play'
   ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l10.5-6.5z"/></svg>'
@@ -405,6 +427,7 @@ function start(r) {
   if (st.meta.watermark) document.documentElement.style.setProperty('--wm', wmUrl(st.meta.watermark));
   render();
   buildLb();
+  scheduleReview();
   if ((st.meta.allowFavorites || st.meta.allowComments) && st.visitor.name) {
     api('getVisitorData', SLUG, st.token, st.visitor).then(v => {
       st.favs = new Set(v.favs || []); st.submittedAt = v.submittedAt || ''; st.comments = v.comments || [];
@@ -452,7 +475,7 @@ function renderBar() {
       ${logoSrc(300) ? `<img class="bar-logo" src="${esc(logoSrc(300))}" alt="">` : ''}
       <div class="bar-title"><b>${esc(m.title)}</b><span>${fmt(L.photos, { n: st.items.length })}</span></div>
       ${m.allowFavorites ? `<button class="ibtn ${st.view === 'favs' ? 'on' : ''}" id="b-fav">${ic('heart')}<span class="lbl">${esc(L.favorites)}</span><span class="badge" id="favcount">${st.favs.size || ''}</span></button>` : ''}
-      ${m.allowDownload && st.folderUrl ? `<button class="ibtn" id="b-dl">${ic('download')}<span class="lbl">${esc(L.downloadAll)}</span></button>` : ''}
+      ${m.allowDownload && (HAS_KEY ? !MOBILE && st.items.length : st.folderUrl) ? `<button class="ibtn" id="b-dl">${ic('download')}<span class="lbl">${esc(L.downloadAll)}</span></button>` : ''}
       <button class="ibtn" id="b-share">${ic('share')}<span class="lbl">${esc(L.share)}</span></button>
     </div>
     ${showTabs ? `<nav class="tabs"><button class="tab on" data-sec="top">${esc(L.all)}</button>${st.sections.map((s, i) => s.title ? `<button class="tab" data-sec="${i}">${esc(s.title)}</button>` : '').join('')}</nav>` : ''}`;
@@ -489,12 +512,13 @@ function renderMain() {
     st.sections.forEach((s, i) => {
       const sec = document.createElement('section'); sec.className = 'sec'; sec.id = 'sec-' + i;
       if (s.title) {
-        sec.innerHTML = `<div class="sec-head"><h2>${esc(s.title)}</h2><span class="meta">${fmt(L.photos, { n: s.items.length })}${s.folderUrl ? ` · <a href="${esc(s.folderUrl)}" target="_blank" rel="noopener" data-dlsec>${esc(L.dlSection)}</a>` : ''}</span></div>`;
+        sec.innerHTML = `<div class="sec-head"><h2>${esc(s.title)}</h2><span class="meta">${fmt(L.photos, { n: s.items.length })}${!st.meta.allowDownload ? '' : HAS_KEY ? (MOBILE ? '' : ` · <a href="#" data-zsec="${i}">${esc(L.dlSection)}</a>`) : s.folderUrl ? ` · <a href="${esc(s.folderUrl)}" target="_blank" rel="noopener" data-dlsec>${esc(L.dlSection)}</a>` : ''}</span></div>`;
       }
       const grid = document.createElement('div'); grid.className = 'grid'; grid._items = s.items;
       sec.appendChild(grid); main.appendChild(sec);
     });
     main.querySelectorAll('[data-dlsec]').forEach(a => a.addEventListener('click', () => api('logDownload', SLUG, st.token, 'section').catch(() => {})));
+    main.querySelectorAll('[data-zsec]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); const sec = st.sections[+a.dataset.zsec]; downloadZip(sec.items, st.meta.title + ' - ' + sec.title, false); }));
   }
   layoutAll();
 }
@@ -505,8 +529,11 @@ function favBarEl(n) {
   d.innerHTML = `<div><div class="count">${esc(lim ? fmt(L.selectedOf, { n, m: lim }) : fmt(L.selected, { n }))}</div>
       ${st.submittedAt ? `<div class="sm">${ic('check')}${esc(L.submittedNote)}</div>` : ''}</div>
     <div class="fb-btns"><button class="btn light" data-a="back">${esc(L.backToAll)}</button>
+      ${n && st.meta.allowDownload ? `<button class="btn light" data-a="dlfav">${ic('download')}${esc(MOBILE ? L.saveFavs : L.dlFavs)}</button>` : ''}
       ${n ? `<button class="btn" data-a="submit">${esc(st.submittedAt ? L.resubmit : L.submit)}</button>` : ''}</div>`;
   d.querySelector('[data-a=back]').onclick = () => setView('all');
+  const df = d.querySelector('[data-a=dlfav]');
+  if (df) df.onclick = () => { const items = st.items.filter(it => st.favs.has(it.id)); MOBILE || !HAS_KEY ? saveFavsPhone(items) : downloadZip(items, st.meta.title + ' - ' + L.favorites, false); };
   const sb = d.querySelector('[data-a=submit]'); if (sb) sb.onclick = submitSelection;
   return d;
 }
@@ -648,21 +675,247 @@ function submitSelection() {
     });
 }
 
-/* ───── downloads & share ───── */
-function download(it) {
-  openUrl(dlUrl(it.id));
-  api('logDownload', SLUG, st.token, 'file').catch(() => {});
+/* ───── downloads ───── */
+// עם מפתח API – הורדה ישירות מגוגל. בלי מפתח – דרך הסקריפט של גוגל (Code.gs) שכבר מחובר לאתר
+const API_KEY = CFG.DRIVE_API_KEY && !/PASTE/.test(CFG.DRIVE_API_KEY) ? CFG.DRIVE_API_KEY : '';
+const HAS_KEY = CFG.DIRECT_DOWNLOAD !== false;
+const IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+const MOBILE = IOS || /Android|Mobi/i.test(navigator.userAgent);
+const fileUrl = id => `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media&supportsAllDrives=true&key=${encodeURIComponent(API_KEY)}`;
+const MIME = { jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png', heic:'image/heic', webp:'image/webp', gif:'image/gif', mp4:'video/mp4', mov:'video/quicktime' };
+const mimeOf = n => MIME[(String(n).split('.').pop() || '').toLowerCase()] || 'application/octet-stream';
+const fmtMB = b => b >= 1e9 ? (b / 1e9).toFixed(2) + ' GB' : Math.round(b / 1e6) + ' MB';
+
+async function fetchFile(it, tries) {
+  tries = tries || 3;
+  for (let a = 1; ; a++) {
+    try {
+      if (API_KEY) {
+        const r = await fetch(fileUrl(it.id));
+        if (!r.ok) throw new Error('http ' + r.status);
+        return new Uint8Array(await r.arrayBuffer());
+      }
+      const f = await api('getFileData', SLUG, st.token, it.id);
+      if (!f || f.error || !f.b64) throw new Error((f && f.error) || 'nodata');
+      const r = await fetch('data:application/octet-stream;base64,' + f.b64);
+      return new Uint8Array(await r.arrayBuffer());
+    } catch (e) {
+      if (a >= tries || /toolarge|disabled|badfile/.test(e && e.message)) throw e;
+      await new Promise(res => setTimeout(res, 800 * a));
+    }
+  }
 }
+function saveBlob(blob, name) {
+  const u = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = u; a.download = name; a.style.display = 'none';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 60000);
+}
+// שיתוף קבצים (אייפון: "שמור תמונה" נכנס ישר לגלריה). אם עבר יותר מדי זמן מהלחיצה – מבקשים לחיצה נוספת
+async function shareFiles(files, title, sub) {
+  const go = async () => { await navigator.share({ files }); return true; };
+  try { return await go(); }
+  catch (e) {
+    if (e && e.name === 'AbortError') return false;
+    return new Promise(res => {
+      modal(`<h3>${esc(title)}</h3><p>${esc(sub || L.readySub)}</p>
+        <div class="row-btns"><button class="btn light" data-close>${esc(L.cancel)}</button><button class="btn" id="shb">${ic('download')}${esc(files.length > 1 ? fmt(L.saveImgs, { n: files.length }) : L.saveImg)}</button></div>`,
+        () => { $('#shb').onclick = async () => { closeModal(); try { res(await go()); } catch (e2) { if (!(e2 && e2.name === 'AbortError')) toast(L.dlErr); res(false); } }; },
+        () => res(false));
+    });
+  }
+}
+const canShareFiles = f => { try { return !!(navigator.share && navigator.canShare && navigator.canShare({ files: f })); } catch (e) { return false; } };
+
+async function download(it) {
+  api('logDownload', SLUG, st.token, 'file').catch(() => {});
+  if (!HAS_KEY) return openUrl(dlUrl(it.id));
+  toast(L.preparing);
+  let data;
+  try { data = await fetchFile(it); }
+  catch (e) { if (/toolarge/.test(e && e.message)) return openUrl(dlUrl(it.id)); toast(L.dlErr); return; }
+  const name = it.n || (it.id + '.jpg');
+  if (IOS) {
+    const f = new File([data], name, { type: mimeOf(name) });
+    if (canShareFiles([f])) { const ok = await shareFiles([f], L.readyOne); if (ok) toast(L.saved); return; }
+  }
+  saveBlob(new Blob([data], { type: mimeOf(name) }), name);
+}
+
+/* מועדפים בטלפון: באייפון דרך "שמור תמונות" (במנות), באנדרואיד הורדה ישירה של כל קובץ */
+async function saveFavsPhone(items) {
+  api('logDownload', SLUG, st.token, 'favorites').catch(() => {});
+  if (!HAS_KEY) { items.forEach(it => openUrl(dlUrl(it.id))); return; }
+  const BATCH = 25;
+  for (let start = 0; start < items.length; start += BATCH) {
+    const chunk = items.slice(start, start + BATCH);
+    const files = [];
+    const ui = progressModal(chunk.length);
+    for (let i = 0; i < chunk.length && !ui.stopped; i++) {
+      try { const d = await fetchFile(chunk[i]); files.push(new File([d], chunk[i].n || chunk[i].id + '.jpg', { type: mimeOf(chunk[i].n) })); ui.add(d.length); }
+      catch (e) { ui.add(0); }
+    }
+    if (ui.stopped) return;
+    closeModal();
+    if (!files.length) { toast(L.dlErr); return; }
+    if (IOS && canShareFiles(files)) {
+      const left = items.length - start - chunk.length;
+      const ok = await shareFiles(files, L.readyTitle, L.readySub);
+      if (!ok) return;
+      if (left > 0) {
+        const cont = await new Promise(res => modal(`<h3>${esc(L.saved)} ✓</h3><p>${esc(fmt(L.nextBatch, { n: left }))}</p>
+          <div class="row-btns"><button class="btn light" data-close>${esc(L.close)}</button><button class="btn" id="nb">${esc(L.cont)}</button></div>`,
+          () => { $('#nb').onclick = () => { closeModal(); res(true); }; }, () => res(false)));
+        if (!cont) return;
+      } else toast(L.saved);
+    } else {
+      for (const f of files) { saveBlob(f, f.name); await new Promise(r => setTimeout(r, 350)); }
+    }
+  }
+}
+
+function progressModal(total) {
+  let n = 0, bytes = 0;
+  const ui = { stopped: false, onStop: null };
+  modal(`<h3>${esc(L.preparing)}</h3><div class="prog"><i id="pgb"></i></div><div class="prog-t" id="pgt"></div>
+    <div class="row-btns"><button class="btn light" data-close>${esc(L.stop)}</button></div>`, null,
+    () => { ui.stopped = true; if (ui.onStop) ui.onStop(); });
+  const draw = () => { const b = $('#pgb'), t = $('#pgt'); if (b) b.style.width = (total ? n / total * 100 : 0) + '%'; if (t) t.textContent = fmt(L.progress, { n, m: total, mb: fmtMB(bytes) }); };
+  ui.add = b => { n++; bytes += b; draw(); };
+  draw();
+  return ui;
+}
+
+/* ───── ZIP (בלי דחיסה – תמונות JPG ממילא לא מתכווצות) עם תמיכה ב-ZIP64 ───── */
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b) { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC_T[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+const U32 = 0xFFFFFFFF;
+class ZipOut {
+  constructor(write) { this.write = write; this.off = 0; this.cd = []; this.names = new Set(); const d = new Date(); this.time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1); this.date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate(); }
+  uniq(name) { let n = name, i = 2; while (this.names.has(n.toLowerCase())) { n = name.replace(/(\.[^.\/]*)?$/, m => ` (${i})` + m); i++; } this.names.add(n.toLowerCase()); return n; }
+  async put(u8) { await this.write(u8); this.off += u8.length; }
+  async add(name, data) {
+    name = this.uniq(name);
+    const nb = new TextEncoder().encode(name), crc = crc32(data), off = this.off;
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+    h.setUint16(10, this.time, true); h.setUint16(12, this.date, true); h.setUint32(14, crc, true);
+    h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, nb.length, true); h.setUint16(28, 0, true);
+    await this.put(new Uint8Array(h.buffer)); await this.put(nb); await this.put(data);
+    this.cd.push({ nb, crc, size: data.length, off });
+  }
+  async finish() {
+    const parts = [], cdStart = this.off;
+    for (const e of this.cd) {
+      const z = e.off >= U32, h = new DataView(new ArrayBuffer(46));
+      h.setUint32(0, 0x02014b50, true); h.setUint16(4, 45, true); h.setUint16(6, z ? 45 : 20, true); h.setUint16(8, 0x0800, true); h.setUint16(10, 0, true);
+      h.setUint16(12, this.time, true); h.setUint16(14, this.date, true); h.setUint32(16, e.crc, true); h.setUint32(20, e.size, true); h.setUint32(24, e.size, true);
+      h.setUint16(28, e.nb.length, true); h.setUint16(30, z ? 12 : 0, true); h.setUint32(42, z ? U32 : e.off, true);
+      parts.push(new Uint8Array(h.buffer), e.nb);
+      if (z) { const x = new DataView(new ArrayBuffer(12)); x.setUint16(0, 1, true); x.setUint16(2, 8, true); x.setBigUint64(4, BigInt(e.off), true); parts.push(new Uint8Array(x.buffer)); }
+    }
+    for (const p of parts) await this.put(p);
+    const cdEnd = this.off, cdSize = cdEnd - cdStart, n = this.cd.length;
+    const z64 = cdStart >= U32 || cdSize >= U32 || n >= 0xFFFF;
+    if (z64) {
+      const r = new DataView(new ArrayBuffer(56 + 20));
+      r.setUint32(0, 0x06064b50, true); r.setBigUint64(4, 44n, true); r.setUint16(12, 45, true); r.setUint16(14, 45, true);
+      r.setBigUint64(24, BigInt(n), true); r.setBigUint64(32, BigInt(n), true); r.setBigUint64(40, BigInt(cdSize), true); r.setBigUint64(48, BigInt(cdStart), true);
+      r.setUint32(56, 0x07064b50, true); r.setBigUint64(64, BigInt(cdEnd), true); r.setUint32(72, 1, true);
+      await this.put(new Uint8Array(r.buffer));
+    }
+    const e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, z64 ? 0xFFFF : n, true); e.setUint16(10, z64 ? 0xFFFF : n, true);
+    e.setUint32(12, z64 ? U32 : cdSize, true); e.setUint32(16, z64 ? U32 : cdStart, true);
+    await this.put(new Uint8Array(e.buffer));
+  }
+}
+
+const zipBase = s => (String(s || 'gallery').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() || 'gallery').slice(0, 80);
+const PART_BYTES = 1.5e9; // בדפדפנים בלי כתיבה ישירה לדיסק – ZIP נפרד לכל ~1.5GB
+
+/* הורדת ZIP במחשב. ב-Chrome/Edge נכתב ישר לדיסק תוך כדי הורדה; בשאר הדפדפנים מתחלק לחלקים */
+async function downloadZip(items, label, withFolders) {
+  const base = zipBase(label);
+  let mode = 'parts', fh = null, writable = null;
+  if (window.showSaveFilePicker && window.isSecureContext) {
+    try {
+      fh = await showSaveFilePicker({ suggestedName: base + '.zip', types: [{ description: 'ZIP', accept: { 'application/zip': ['.zip'] } }] });
+      writable = await fh.createWritable(); mode = 'stream';
+    } catch (e) { if (e && e.name === 'AbortError') return; mode = 'parts'; }
+  }
+  api('logDownload', SLUG, st.token, 'all').catch(() => {});
+  const ui = progressModal(items.length);
+  ui.onStop = () => { if (writable) writable.abort().catch(() => {}); };
+  const secName = it => withFolders && st.sections[it.s] && st.sections[it.s].title ? zipBase(st.sections[it.s].title) + '/' : '';
+  let zip, chunks = [], partBytes = 0, part = 1, failed = 0;
+  const newZip = () => {
+    if (mode === 'stream') zip = new ZipOut(u8 => writable.write(u8));
+    else { chunks = []; partBytes = 0; zip = new ZipOut(u8 => { chunks.push(u8); partBytes += u8.length; }); }
+  };
+  const flushPart = async (last) => {
+    await zip.finish();
+    const name = (last && part === 1) ? base + '.zip' : `${base} - ${part}.zip`;
+    saveBlob(new Blob(chunks, { type: 'application/zip' }), name);
+    chunks = [];
+    if (!last) { toast(fmt(L.dlPart, { n: part })); part++; newZip(); }
+  };
+  newZip();
+  // מורידים 4 קבצים במקביל, כותבים לפי הסדר
+  const q = []; let next = 0;
+  const pump = () => { if (next < items.length) { const it = items[next++]; q.push(fetchFile(it).then(d => [it, d], () => [it, null])); } };
+  for (let k = 0; k < 4; k++) pump();
+  try {
+    while (q.length) {
+      const [it, data] = await q.shift();
+      if (ui.stopped) return;
+      pump();
+      if (!data) { failed++; ui.add(0); continue; }
+      await zip.add(secName(it) + (it.n || it.id + '.jpg'), data);
+      ui.add(data.length);
+      if (mode === 'parts' && partBytes >= PART_BYTES && q.length) await flushPart(false);
+    }
+    if (ui.stopped) return;
+    if (mode === 'stream') { await zip.finish(); await writable.close(); }
+    else await flushPart(true);
+    closeModal();
+    toast(failed ? fmt(L.dlFailed, { n: failed }) : L.dlDone);
+  } catch (e) {
+    if (ui.stopped) return;
+    if (writable) writable.abort().catch(() => {});
+    closeModal(); toast(L.dlErr);
+  }
+}
+
 function downloadAll() {
-  const secs = st.sections.filter(s => s.title && s.folderUrl);
-  modal(`<h3>${esc(L.dlTitle)}</h3><p>${esc(L.dlHelp)}</p>
+  // בלי מפתח API – ההתנהגות הישנה (פתיחת התיקייה בדרייב)
+  if (!HAS_KEY) {
+    const secs = st.sections.filter(s => s.title && s.folderUrl);
+    modal(`<h3>${esc(L.dlTitle)}</h3><p>${esc(L.dlHelp)}</p>
+      <div class="dl-list">
+        <button class="btn" data-u="${esc(st.folderUrl)}"><span>${esc(L.dlEverything)}</span><span>${st.items.length}</span></button>
+        ${secs.map(s => `<button class="btn light" data-u="${esc(s.folderUrl)}"><span>${esc(s.title)}</span><span>${s.items.length}</span></button>`).join('')}
+      </div>
+      <div class="row-btns"><button class="btn light" data-close>${esc(L.close)}</button></div>`,
+      m => m.querySelectorAll('[data-u]').forEach(b => b.onclick = () => { openUrl(b.dataset.u); api('logDownload', SLUG, st.token, 'all').catch(() => {}); }));
+    return;
+  }
+  const secs = st.sections.map((s, i) => ({ s, i })).filter(x => x.s.title && x.s.items.length);
+  const stream = !!window.showSaveFilePicker;
+  modal(`<h3>${esc(L.dlTitle)}</h3><p>${esc(stream ? L.dlHelp : L.dlHelpParts)}</p>
     <div class="dl-list">
-      <button class="btn" data-u="${esc(st.folderUrl)}"><span>${esc(L.dlEverything)}</span><span>${st.items.length}</span></button>
-      ${secs.map(s => `<button class="btn light" data-u="${esc(s.folderUrl)}"><span>${esc(s.title)}</span><span>${s.items.length}</span></button>`).join('')}
+      <button class="btn" data-i="all"><span>${esc(L.dlEverything)}</span><span>${st.items.length}</span></button>
+      ${secs.length > 1 ? secs.map(x => `<button class="btn light" data-i="${x.i}"><span>${esc(x.s.title)}</span><span>${x.s.items.length}</span></button>`).join('') : ''}
     </div>
     <div class="row-btns"><button class="btn light" data-close>${esc(L.close)}</button></div>`,
-    m => m.querySelectorAll('[data-u]').forEach(b => b.onclick = () => { openUrl(b.dataset.u); api('logDownload', SLUG, st.token, 'all').catch(() => {}); }));
+    m => m.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
+      const all = b.dataset.i === 'all', sec = all ? null : st.sections[+b.dataset.i];
+      closeModal();
+      downloadZip(all ? st.items : sec.items, all ? st.meta.title : st.meta.title + ' - ' + sec.title, all);
+    }));
 }
+
+/* ───── share ───── */
 async function share() {
   const url = SITE + '?g=' + encodeURIComponent(SLUG);
   if (navigator.share && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
@@ -711,14 +964,91 @@ function buildLb() {
   $('#lbr').onclick = () => lbStep(RTL ? -1 : 1);
   $('#lbl').onclick = () => lbStep(RTL ? 1 : -1);
   const stage = $('#lbs');
-  let sx = 0, sy = 0;
-  stage.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  let sx = 0, sy = 0, multi = false;
+  stage.addEventListener('touchstart', e => { if (e.touches.length > 1) multi = true; else { multi = false; sx = e.touches[0].clientX; sy = e.touches[0].clientY; } }, { passive: true });
   stage.addEventListener('touchend', e => {
+    if (multi || Z.s > 1.01 || Z.wasZoomed) { if (!e.touches.length) multi = false; return; }
     const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.3) lbStep(dx < 0 ? (RTL ? -1 : 1) : (RTL ? 1 : -1));
     else if (dy > 110 && Math.abs(dy) > Math.abs(dx) * 1.5) closeLb();
   });
-  stage.addEventListener('click', e => { if (e.target === stage) closeLb(); });
+  stage.addEventListener('click', e => { if (e.target === stage && Z.s <= 1.01) closeLb(); });
+  initZoom(stage);
+}
+
+/* ───── זום בתצוגה המוגדלת: צביטה, לחיצה כפולה, גלגלת, גרירה ───── */
+const Z = { s: 1, x: 0, y: 0, img: null, it: null, hi: false, wasZoomed: false, MAX: 5 };
+function zApply(anim) {
+  const img = Z.img; if (!img) return;
+  const st0 = img.parentElement, sw = st0.clientWidth, sh = st0.clientHeight;
+  const mx = Math.max(0, (img.offsetWidth * Z.s - sw) / 2), my = Math.max(0, (img.offsetHeight * Z.s - sh) / 2);
+  Z.x = Math.min(mx, Math.max(-mx, Z.x)); Z.y = Math.min(my, Math.max(-my, Z.y));
+  img.classList.toggle('anim', !!anim);
+  img.classList.toggle('zoomed', Z.s > 1.01);
+  img.style.transform = Z.s > 1.001 ? `translate(${Z.x}px,${Z.y}px) scale(${Z.s})` : '';
+  if (Z.s > 1.2 && !Z.hi && Z.it) {  // טוענים גרסה חדה יותר כשמגדילים
+    Z.hi = true; const it = Z.it, big = new Image();
+    big.onload = () => { if (Z.it === it && Z.img) Z.img.src = big.src; };
+    big.src = thumb(it.id, 4000);
+  }
+}
+function zReset(img, it) { Z.s = 1; Z.x = 0; Z.y = 0; Z.img = img; Z.it = it; Z.hi = false; if (img) zApply(false); }
+function zAt(cx, cy, ns, anim) {
+  const img = Z.img; if (!img) return;
+  const r = img.parentElement.getBoundingClientRect();
+  const px = cx - (r.left + r.width / 2), py = cy - (r.top + r.height / 2);
+  ns = Math.min(Z.MAX, Math.max(1, ns));
+  Z.x = px - (px - Z.x) * ns / Z.s; Z.y = py - (py - Z.y) * ns / Z.s; Z.s = ns;
+  if (ns <= 1) { Z.x = 0; Z.y = 0; }
+  zApply(anim);
+}
+function initZoom(stage) {
+  const pts = new Map();
+  let pinch = null, pan = null, lastType = '', lastTap = 0, lastX = 0, lastY = 0, moved = false;
+  const dist = () => { const [a, b] = [...pts.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+  const mid = () => { const [a, b] = [...pts.values()]; return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; };
+  stage.addEventListener('pointerdown', e => {
+    if (!Z.img || e.target !== Z.img && pts.size === 0 && Z.s <= 1.01) return;
+    lastType = e.pointerType;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+    moved = false; Z.wasZoomed = Z.s > 1.01;
+    if (pts.size === 2) { const m = mid(); pinch = { d: dist(), s: Z.s, mx: m.x, my: m.y, x: Z.x, y: Z.y }; pan = null; }
+    else if (pts.size === 1 && Z.s > 1.01) pan = { x: e.clientX, y: e.clientY, ox: Z.x, oy: Z.y };
+  });
+  stage.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId)) return;
+    const p = pts.get(e.pointerId);
+    if (Math.hypot(e.clientX - p.x, e.clientY - p.y) > 6) moved = true;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && pts.size >= 2) {
+      const m = mid(), ns = Math.min(Z.MAX, Math.max(1, pinch.s * dist() / pinch.d));
+      const r = stage.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const px = pinch.mx - cx, py = pinch.my - cy;
+      Z.x = px - (px - pinch.x) * ns / pinch.s + (m.x - pinch.mx);
+      Z.y = py - (py - pinch.y) * ns / pinch.s + (m.y - pinch.my);
+      Z.s = ns; zApply(false); Z.wasZoomed = true;
+    } else if (pan) { Z.x = pan.ox + e.clientX - pan.x; Z.y = pan.oy + e.clientY - pan.y; zApply(false); }
+  });
+  const up = e => {
+    if (!pts.has(e.pointerId)) return;
+    pts.delete(e.pointerId);
+    if (pts.size < 2) pinch = null;
+    if (pts.size === 1 && Z.s > 1.01) { const p = [...pts.values()][0]; pan = { x: p.x, y: p.y, ox: Z.x, oy: Z.y }; }
+    if (pts.size === 0) {
+      pan = null;
+      if (Z.s < 1.05 && Z.s !== 1) { Z.s = 1; Z.x = 0; Z.y = 0; zApply(true); }
+      if (e.type === 'pointerup' && !moved && e.pointerType !== 'mouse') {  // לחיצה כפולה בטלפון
+        const now = Date.now();
+        if (now - lastTap < 320 && Math.hypot(e.clientX - lastX, e.clientY - lastY) < 30) { zAt(e.clientX, e.clientY, Z.s > 1.01 ? 1 : 2.5, true); lastTap = 0; Z.wasZoomed = true; }
+        else { lastTap = now; lastX = e.clientX; lastY = e.clientY; }
+      }
+      setTimeout(() => { Z.wasZoomed = false; }, 50);
+    }
+  };
+  stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
+  stage.addEventListener('dblclick', e => { if (Z.img && e.target === Z.img && lastType === 'mouse') zAt(e.clientX, e.clientY, Z.s > 1.01 ? 1 : 2.5, true); });
+  stage.addEventListener('wheel', e => { if (!Z.img) return; e.preventDefault(); zAt(e.clientX, e.clientY, Z.s * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0025)), false); }, { passive: false });
 }
 function openLb(it) {
   st.lbList = st.list.slice();
@@ -728,6 +1058,7 @@ function openLb(it) {
   lbShow(i);
 }
 function closeLb() {
+  zReset(null, null);
   $('#lb').classList.remove('open'); $('#lbs').innerHTML = '';
   document.body.style.overflow = ''; st.lb = -1;
 }
@@ -737,6 +1068,7 @@ function lbShow(i) {
   const list = st.lbList; if (!list.length) return closeLb();
   i = (i + list.length) % list.length; st.lb = i;
   const it = list[i], stage = $('#lbs');
+  zReset(null, null);
   if (it.v) {
     stage.innerHTML = `<iframe src="https://drive.google.com/file/d/${it.id}/preview" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
   } else {
@@ -744,8 +1076,9 @@ function lbShow(i) {
     const lo = it._img && it._img.complete && it._img.naturalWidth ? it._img.src : '';
     if (lo) img.src = lo;
     stage.innerHTML = ''; stage.appendChild(img);
+    zReset(img, it);
     const w = lbW(), hi = new Image();
-    hi.onload = () => { if (st.lb === i && st.lbList[i] === it) img.src = hi.src; };
+    hi.onload = () => { if (st.lb === i && st.lbList[i] === it && !Z.hi) img.src = hi.src; };
     hi.onerror = () => { if (!hi.dataset.fb) { hi.dataset.fb = '1'; hi.src = thumb2(it.id, w); } };
     hi.src = thumb(it.id, w);
     [1, -1].forEach(d => { const n = list[(i + d + list.length) % list.length]; if (n && !n.v) { const p = new Image(); p.src = thumb(n.id, w); } });
@@ -770,12 +1103,58 @@ document.addEventListener('keydown', e => {
   if ($('#modal').classList.contains('open')) { if (e.key === 'Escape') cancelModal(); return; }
   if (st.lb < 0) return;
   if (e.key === 'Escape') closeLb();
+  else if (Z.s > 1.01 && /^Arrow/.test(e.key)) return;
   else if (e.key === 'ArrowRight') lbStep(RTL ? -1 : 1);
   else if (e.key === 'ArrowLeft') lbStep(RTL ? 1 : -1);
+  else if ((e.key === '+' || e.key === '=') && Z.img) { const r = Z.img.parentElement.getBoundingClientRect(); zAt(r.left + r.width / 2, r.top + r.height / 2, Z.s * 1.5, true); }
+  else if (e.key === '-' && Z.img) { const r = Z.img.parentElement.getBoundingClientRect(); zAt(r.left + r.width / 2, r.top + r.height / 2, Z.s / 1.5, true); }
 });
 document.addEventListener('contextmenu', e => {
   if (document.body.classList.contains('nodl') && e.target.tagName === 'IMG') e.preventDefault();
 });
+
+/* ───── חלון המלצה ───── */
+function scheduleReview() {
+  if (CFG.REVIEWS === false || store.get('grev_done') || store.get('grev_skip_' + SLUG)) return;
+  setTimeout(tryReview, (+CFG.REVIEW_DELAY_SEC || 20) * 1000);
+}
+function tryReview() {
+  // לא קופצים באמצע הורדה, הגדלה או חלון אחר
+  if ($('#modal').classList.contains('open') || st.lb >= 0 || document.hidden) return setTimeout(tryReview, 5000);
+  showReview();
+}
+function showReview() {
+  let rating = 0;
+  modal(`<div class="rev"><h3>${esc(L.revTitle)}</h3><p>${esc(L.revSub)}</p>
+    <div class="stars" id="rvs">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-n="${n}" aria-label="${n}">${ic('star')}</button>`).join('')}</div>
+    <form id="rvf"><input class="field" id="rvn" placeholder="${esc(L.revName)}" value="${esc(st.visitor.name || '')}" autocomplete="name">
+    <textarea class="field" id="rvt" placeholder="${esc(L.revPh)}"></textarea>
+    <div class="row-btns"><button type="button" class="btn light" data-close>${esc(L.revLater)}</button><button class="btn" type="submit" id="rvb">${esc(L.send)}</button></div></form></div>`,
+    m => {
+      m.querySelector('.card').classList.add('rev');
+      const stars = [...m.querySelectorAll('#rvs button')];
+      const paint = k => stars.forEach(b => b.classList.toggle('on', +b.dataset.n <= k));
+      stars.forEach(b => {
+        b.onclick = () => { rating = +b.dataset.n; paint(rating); };
+        b.onmouseenter = () => paint(+b.dataset.n);
+        b.onmouseleave = () => paint(rating);
+      });
+      $('#rvf').onsubmit = async e => {
+        e.preventDefault();
+        const text = $('#rvt').value.trim(), name = $('#rvn').value.trim();
+        if (!text && !rating) { $('#rvt').focus(); return; }
+        const b = $('#rvb'); b.disabled = true;
+        try {
+          const r = await api('addReview', SLUG, st.token, { key: st.visitor.key, name, rating, text });
+          if (r && r.error) throw new Error(r.error);
+          store.set('grev_done', '1');
+          if (name && !st.visitor.name) { st.visitor.name = name; store.set('gvisitor', JSON.stringify(st.visitor)); }
+          closeModal(); toast(L.revThanks);
+        } catch (err) { b.disabled = false; toast(L.error); }
+      };
+    },
+    () => store.set('grev_skip_' + SLUG, '1'));
+}
 
 /* ───── footer ───── */
 function footerHtml() {

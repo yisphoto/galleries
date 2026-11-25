@@ -203,6 +203,7 @@ const ICONS = {
   trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
   edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
   check:'<polyline points="20 6 9 17 4 12"/>',
+  star:'<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
   logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
 };
 const ic = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n] || ''}</svg>`;
@@ -302,6 +303,7 @@ function renderDash() {
     <header class="top"><div class="top-in">
       <div class="brand">${esc(s.studioName || 'הגלריות שלי')}<small>ניהול</small></div>
       <a class="btn ghost" href="${esc(DATA.rootUrl)}" target="_blank" rel="noopener">${ic('folder')}<span class="lbl">התיקייה בדרייב</span></a>
+      <button class="btn ghost" id="brev">${ic('star')}<span class="lbl">המלצות</span></button>
       <button class="btn ghost" id="bset">${ic('gear')}<span class="lbl">הגדרות</span></button>
       <button class="btn ghost" id="bout" title="יציאה">${ic('logout')}</button>
       <button class="btn pri" id="bnew">${ic('plus')}<span class="lbl">גלריה חדשה</span></button>
@@ -318,6 +320,7 @@ function renderDash() {
     </div>`;
   $('#bnew').onclick = () => openEditor();
   $('#bset').onclick = openSettings;
+  $('#brev').onclick = openReviews;
   $('#bout').onclick = () => { T = ''; ss.del('adm'); showLogin(); };
   const q = $('#q'); if (q) q.oninput = () => { FILTER = q.value; renderCards(); };
   renderCards();
@@ -589,6 +592,28 @@ async function openSelections(g) {
     const v = vis[+b.dataset.cp];
     const names = v.favs.map(f => b.dataset.mode === 'space' ? noExt(f.n) : f.n);
     copy(names.join(b.dataset.mode === 'space' ? ' ' : ', '), `${names.length} שמות קבצים הועתקו`);
+  });
+}
+
+/* ───── reviews ───── */
+async function openReviews() {
+  const m = modal('המלצות מלקוחות', '<div class="mbody"><div class="spinner" style="margin:40px auto"></div></div>', '', 'wide');
+  let r;
+  try { r = await call('adminGetReviews'); } catch (e) { fail(e); closeModal(); return; }
+  if (!$('#modal').classList.contains('open')) return;
+  const list = (r.reviews || []).slice().sort((a, b) => String(b.ts).localeCompare(String(a.ts)));
+  const stars = n => n ? `<span style="color:#f2b01e;letter-spacing:1px">${'★'.repeat(n)}</span><span style="color:#ddd;letter-spacing:1px">${'★'.repeat(5 - n)}</span>` : '';
+  $('.mbody', m).innerHTML = !list.length ? '<p class="note" style="padding:30px 0;text-align:center">עוד לא התקבלו המלצות.</p>' :
+    list.map((v, i) => `<div class="vis"><div class="vhead"><div><div class="vname">${esc(v.name || 'לקוח ללא שם')} ${stars(+v.rating || 0)}</div>
+        <div class="vmeta">${esc(v.gallery || '')} · ${esc(fmtTime(v.ts))}</div></div>
+        <div class="inline"><button class="btn ghost sm" data-rc="${i}">העתקה</button><button class="btn ghost sm" data-rd="${i}" title="מחיקה">${ic('trash')}</button></div></div>
+      ${v.text ? `<div class="vnote" style="margin:0">${esc(v.text)}</div>` : ''}</div>`).join('');
+  $$('[data-rc]', m).forEach(b => b.onclick = () => { const v = list[+b.dataset.rc]; copy(`"${v.text}"${v.name ? '\n– ' + v.name : ''}`, 'ההמלצה הועתקה'); });
+  $$('[data-rd]', m).forEach(b => b.onclick = async () => {
+    const v = list[+b.dataset.rd];
+    if (!(await confirmBox('מחיקת המלצה', `<p class="note">למחוק את ההמלצה של ${esc(v.name || 'הלקוח')}?</p>`, 'מחיקה', true))) return openReviews();
+    try { await call('adminDeleteReview', v.id); toast('נמחק'); } catch (e) { fail(e); }
+    openReviews();
   });
 }
 
