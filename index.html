@@ -709,7 +709,7 @@ const mimeOf = n => MIME[(String(n).split('.').pop() || '').toLowerCase()] || 'a
 const fmtMB = b => b >= 1e9 ? (b / 1e9).toFixed(2) + ' GB' : Math.round(b / 1e6) + ' MB';
 
 // ניסיון להוריד ישר מגוגל (מהיר). אם הדפדפן חוסם – עוברים לשרת, וזוכרים את זה לשאר הקבצים
-let DIRECT = null;
+let DIRECT = null, KEYOK = null;
 async function fetchDirect(it) {
   const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
   try {
@@ -729,10 +729,12 @@ async function fetchFile(it, tries) {
   tries = tries || 3;
   for (let a = 1; ; a++) {
     try {
-      if (API_KEY) {
+      if (API_KEY && KEYOK !== false) {
         const r = await fetch(fileUrl(it.id));
-        if (!r.ok) throw new Error('http ' + r.status);
-        return new Uint8Array(await r.arrayBuffer());
+        if (r.ok) { KEYOK = true; return new Uint8Array(await r.arrayBuffer()); }
+        // מפתח חסום/לא תקין – ממשיכים בדרכים האחרות, בלי לנסות שוב את המפתח
+        if ((r.status === 400 || r.status === 403) && KEYOK === null) KEYOK = false;
+        else if (r.status !== 404) throw new Error('http ' + r.status);
       }
       if (DIRECT !== false) { const d = await fetchDirect(it); if (d) return d; }
       const f = await api('getFileData', SLUG, st.token, it.id);
